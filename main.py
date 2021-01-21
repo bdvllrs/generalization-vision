@@ -12,14 +12,14 @@ if __name__ == '__main__':
     model_names = [
         "CLIP-ViT-B/32",
         "CLIP-RN50",
-        "RN50",
         "virtex",
+        "RN50",
+        "madry-imagenet_l2_3_0",
+        "madry-imagenet_linf_4",
+        "madry-imagenet_linf_8",
         "geirhos-resnet50_trained_on_SIN",
         "geirhos-resnet50_trained_on_SIN_and_IN",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8"
     ]
     # Dataset to test on
     datasets = [{"name": "MNIST", "batch_size": 64}]
@@ -82,7 +82,8 @@ if __name__ == '__main__':
                             trial_accuracies.append(accuracy)
                             trial_confusion_matrices.append(confusion_matrix)
 
-                        accuracies[model_name][dataset['name']][n_proto] = np.mean(trial_accuracies, axis=0)
+                        accuracies[model_name][dataset['name']][n_proto] = (np.mean(trial_accuracies, axis=0),
+                                                                            np.std(trial_accuracies, axis=0))
                         confusion_matrices[model_name][dataset['name']][n_proto] = np.mean(confusion_matrix, axis=0)
 
                         print(f"Accuracy: {accuracy}")

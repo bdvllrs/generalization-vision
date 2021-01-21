@@ -10,6 +10,7 @@ from torchvision.datasets import MNIST
 from torchvision.models import resnet50
 from tqdm import tqdm
 from robustness.imagenet_models import resnet50
+import json
 
 import clip
 
@@ -207,4 +208,5 @@ def save_results(results_path, accuracies, confusion_matrices, config):
     results_path.mkdir()
     np.save(str(results_path / "accuracies.npy"), accuracies)
     np.save(str(results_path / "confusion_matrices.npy"), confusion_matrices)
-    np.save(str(results_path / "config.npy"), config)
+    with open(str(results_path / "config.json"), "w") as config_file:
+        json.dump(config, config_file, indent=4)
