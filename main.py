@@ -64,10 +64,19 @@ if __name__ == '__main__':
     try:
         with torch.no_grad():
             for model_name in model_names:
+                if model_name not in accuracies:
+                    accuracies[model_name] = dict()
+                if model_name not in confusion_matrices:
+                    confusion_matrices[model_name] = dict()
                 # Import model
                 model, transform = get_model(model_name, device)
 
                 for dataset in datasets:
+                    if dataset['name'] not in accuracies[model_name]:
+                        accuracies[model_name][dataset['name']] = dict()
+                    if dataset['name'] not in confusion_matrices[model_name]:
+                        confusion_matrices[model_name][dataset['name']] = dict()
+
                     # Get dataset
                     dataset_train, dataset_test, class_names = get_dataset(dataset, transform)
                     dataset_train = RandomizedDataset(dataset_train)
@@ -87,11 +96,6 @@ if __name__ == '__main__':
                             print(
                                 f"{model_name}. {dataset['name']}. {n_proto} prototype(s). SKIPPED.")
                             continue
-                        else:
-                            accuracies[model_name] = dict()
-                            confusion_matrices[model_name] = dict()
-                            accuracies[model_name][dataset['name']] = dict()
-                            confusion_matrices[model_name][dataset['name']] = dict()
 
                         for k in range(n_trials):
                             print(

@@ -28,7 +28,7 @@ class PlotMarker:
 
 
 if __name__ == '__main__':
-    result_id = 2
+    result_id = 5
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
 
