@@ -11,7 +11,7 @@ from utils import evaluate_dataset, get_prototypes, get_model, get_dataset, Rand
 if __name__ == '__main__':
     device = "cuda:2" if torch.cuda.is_available() else "cpu"
 
-    load_results_id = 2
+    load_results_id = 5
 
     # Models to test
     model_names = [

@@ -205,7 +205,8 @@ def get_model(model_name, device):
         transform = imagenet_transform
     elif "geirhos" in model_name and model_name.replace("geirhos-", "") in geirhos_model_urls.keys():
         model = resnet50(pretrained=False)
-        checkpoint = model_zoo.load_url(geirhos_model_urls[model_name.replace("geirhos-", "")])
+        checkpoint = model_zoo.load_url(geirhos_model_urls[model_name.replace("geirhos-", "")],
+                                        map_location=torch.device('cpu'))
         model = ModelEncapsulation(model)
         model.load_state_dict(checkpoint["state_dict"])
         model.to(device)
