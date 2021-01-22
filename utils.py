@@ -1,16 +1,18 @@
+import json
 import os
+from pathlib import Path
 
+import PIL.Image as Image
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torchvision.transforms as transforms
+from robustness.imagenet_models import resnet50
 from sklearn.metrics import confusion_matrix as confusion_matrix_, accuracy_score as accuracy_score_
 from torch.utils import model_zoo
-from torchvision.datasets import MNIST
+from torchvision.datasets import CIFAR10, CIFAR100, MNIST, FashionMNIST
 from torchvision.models import resnet50
 from tqdm import tqdm
-from robustness.imagenet_models import resnet50
-import json
 
 import clip
 
@@ -28,7 +30,7 @@ madry_models = ["imagenet_l2_3_0", "imagenet_linf_4", "imagenet_linf_8"]
 
 imagenet_norm_mean, imagenet_norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 imagenet_transform = transforms.Compose([
-    transforms.Resize(256),
+    transforms.Resize(256, interpolation=Image.BICUBIC),
     transforms.CenterCrop(224),
     lambda image: image.convert("RGB"),
     transforms.ToTensor(),
@@ -60,6 +62,36 @@ class RandomizedDataset:
 
     def __getitem__(self, item):
         return self.dataset[self.order[item]]
+
+
+class CUBDataset:
+    def __init__(self, root_dir, train=True, transform=None):
+        split_idx = 1 if train else 0
+        self.root_dir = Path(root_dir)
+        self.id_file = self.root_dir / "images.txt"
+        self.label_file = self.root_dir / "image_class_labels.txt"
+        self.split_file = self.root_dir / "train_test_split.txt"
+        self.transform = transform
+
+        with open(self.split_file, "r") as f:
+            self.split = [int(line.rstrip('\n').split(" ")[0]) for line in f if
+                          int(line.rstrip('\n').split(" ")[1]) == split_idx]
+        with open(self.label_file, "r") as f:
+            self.labels = {int(line.rstrip('\n').split(" ")[0]): int(line.rstrip('\n').split(" ")[1]) for line in f if
+                           int(line.rstrip('\n').split(" ")[0]) in self.split}
+        with open(self.id_file, "r") as f:
+            self.location = {int(line.rstrip('\n').split(" ")[0]): " ".join(line.rstrip('\n').split(" ")[1:]) for line
+                             in f if int(line.rstrip('\n').split(" ")[0]) in self.split}
+
+    def __len__(self):
+        return len(self.split)
+
+    def __getitem__(self, item):
+        file_idx = self.split[item]
+        label = self.labels[file_idx] - 1 # Start index at 0
+        with Image.open(self.root_dir / "images" / self.location[file_idx]) as image:
+            processed_image = self.transform(image)
+        return processed_image, label
 
 
 def plot_class_predictions(images, class_names, probs,
@@ -180,8 +212,10 @@ def get_model(model_name, device):
         transform = imagenet_transform
     elif "madry" in model_name and model_name.replace("madry-", "") in madry_models:
         model = resnet50(pretrained=False)
-        checkpoint = torch.load(os.path.join(madry_model_folder, model_name.replace("madry-", "") + ".pt"))['model']
-        checkpoint = {mod_name.replace(".model", ""): mod_param for mod_name, mod_param in checkpoint.items() if "module.model" in mod_name}
+        checkpoint = torch.load(os.path.join(madry_model_folder, model_name.replace("madry-", "") + ".pt"),
+                                map_location=torch.device('cpu'))['model']
+        checkpoint = {mod_name.replace(".model", ""): mod_param for mod_name, mod_param in checkpoint.items() if
+                      "module.model" in mod_name}
         model = ModelEncapsulation(model)
         model.load_state_dict(checkpoint)
         model.to(device)
@@ -191,14 +225,32 @@ def get_model(model_name, device):
     return model, transform
 
 
-def get_dataset(dataset_name, transform):
-    if dataset_name == "MNIST":
+def get_dataset(dataset, transform):
+    if dataset['name'] == "MNIST":
         # Download the dataset
-        dataset_train = MNIST(root=os.path.expanduser("~/.cache"), download=True, train=True, transform=transform)
-        dataset_test = MNIST(root=os.path.expanduser("~/.cache"), download=True, train=False, transform=transform)
+        dataset_train = MNIST(root=dataset["root_dir"], download=True, train=True, transform=transform)
+        dataset_test = MNIST(root=dataset["root_dir"], download=True, train=False, transform=transform)
         class_names = list(map(str, range(10)))
+    elif dataset['name'] == "FashionMNIST":
+        dataset_train = FashionMNIST(root=dataset["root_dir"], download=True, train=True, transform=transform)
+        dataset_test = FashionMNIST(root=dataset["root_dir"], download=True, train=False, transform=transform)
+        class_names = list(map(str, range(10)))
+    elif dataset['name'] == "CIFAR10":
+        dataset_train = CIFAR10(root=dataset["root_dir"], download=True, train=True, transform=transform)
+        dataset_test = CIFAR10(root=dataset["root_dir"], download=True, train=False, transform=transform)
+        class_names = list(map(str, range(10)))
+    elif dataset['name'] == "CIFAR100":
+        dataset_train = CIFAR100(root=dataset["root_dir"], download=True, train=True, transform=transform)
+        dataset_test = CIFAR100(root=dataset["root_dir"], download=True, train=False, transform=transform)
+        class_names = list(map(str, range(100)))
+    elif dataset['name'] == "CUB":
+        dataset_train = CUBDataset(dataset["root_dir"], train=True,
+                                   transform=transform)
+        dataset_test = CUBDataset(dataset["root_dir"], train=False,
+                                  transform=transform)
+        class_names = list(map(str, range(200)))
     else:
-        raise ValueError(f"{dataset_name} is not a valid dataset name.")
+        raise ValueError(f"{dataset['name']} is not a valid dataset name.")
 
     return dataset_train, dataset_test, class_names
 
@@ -210,3 +262,12 @@ def save_results(results_path, accuracies, confusion_matrices, config):
     np.save(str(results_path / "confusion_matrices.npy"), confusion_matrices)
     with open(str(results_path / "config.json"), "w") as config_file:
         json.dump(config, config_file, indent=4)
+
+
+def load_results(results_path):
+    with open(results_path / "config.json", "r") as f:
+        config = json.load(f)
+
+    accuracies = np.load(results_path / "accuracies.npy", allow_pickle=True).item()
+    confusion_matrices = np.load(results_path / "confusion_matrices.npy", allow_pickle=True).item()
+    return accuracies, confusion_matrices, config

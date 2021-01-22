@@ -1,5 +1,11 @@
+import json
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.gridspec import GridSpec
+
+from utils import load_results
 
 
 class PlotMarker:
@@ -12,6 +18,9 @@ class PlotMarker:
 
         self.marker_count = 0
 
+    def reset(self):
+        self.marker_count = 0
+
     def get_marker(self):
         marker = self.possible_markers[self.marker_count]
         self.marker_count = (self.marker_count + 1) % len(self.possible_markers)
@@ -19,24 +28,35 @@ class PlotMarker:
 
 
 if __name__ == '__main__':
-    result_id = 1
+    result_id = 2
 
-    config = np.load(f"results/{result_id}/config.npy", allow_pickle=True).item()
-    accuracies = np.load(f"results/{result_id}/accuracies.npy", allow_pickle=True).item()
-    confusion_matrices = np.load(f"results/{result_id}/confusion_matrices.npy", allow_pickle=True).item()
+    accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
 
     plot_marker = PlotMarker(len(config['model_names']))
 
-    for dataset in config['datasets']:
-        fig, ax = plt.subplots(figsize=(10, 10))
+    n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
+    n_cols = 3
+    n_rows = round(n_datasets / n_cols)
+
+    fig = plt.figure(figsize=(5 * n_cols, 5 * n_rows))
+    gs = GridSpec(n_rows, n_cols, figure=fig, wspace=0.4, hspace=0.4)
+
+    for k, dataset in enumerate(config['datasets']):
+        plot_marker.reset()
+        ax = fig.add_subplot(gs[k // 3, k % 3])
         for model, model_accuracies in accuracies.items():
-            x = list(model_accuracies[dataset['name']].keys())
-            y = list(model_accuracies[dataset['name']].values())
+            if dataset['name'] in model_accuracies:
+                x = list(model_accuracies[dataset['name']].keys())
+                y_mean, y_std = zip(*model_accuracies[dataset['name']].values())
 
-            ax.plot(x, y, plot_marker.get_marker(), label=model)
+                ax.errorbar(x, y_mean, y_std, None, plot_marker.get_marker(), label=model)
 
-        ax.legend()
-        ax.set_title(f"Few-shot accuracies on {dataset['name']}.")
-        plt.show()
+        if k == 0:
+            ax.legend()
+        ax.set_title(dataset['name'])
+        ax.set_ylabel("Accuracy")
+        ax.set_xlabel("Number of prototypes per class")
+    fig.suptitle("Few-shot accuracies on various datasets and models")
+    plt.show()
 
     print(config)
