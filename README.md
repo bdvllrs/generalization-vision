@@ -7,6 +7,13 @@ and change `madry_model_folder` in `utils.py`.
 
 The default is `$TORCH_HOME/checkpoints` and the default of `$TORCH_HOME` is `~/.cache/torch`.
 
+### BiT models
+Download the BiT models:
+```
+wget https://storage.googleapis.com/bit_models/BiT-M-R50x1.npz
+```
+and update the location in the `BiT_model_urls` dict of `utils.py`.
+
 ### Compute accuracies
 Execute `main.py`
 

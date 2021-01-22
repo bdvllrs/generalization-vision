@@ -15,6 +15,11 @@ from torchvision.models import resnet50
 from tqdm import tqdm
 
 import clip
+from bit_model import KNOWN_MODELS as BiT_MODELS
+
+BiT_model_urls = {
+    'BiT-M-R50x1': os.path.expanduser("~/.cache/torch/checkpoints/BiT-M-R50x1.npz"),
+}
 
 clip_models = ["ViT-B/32", "RN50"]
 
@@ -88,7 +93,7 @@ class CUBDataset:
 
     def __getitem__(self, item):
         file_idx = self.split[item]
-        label = self.labels[file_idx] - 1 # Start index at 0
+        label = self.labels[file_idx] - 1  # Start index at 0
         with Image.open(self.root_dir / "images" / self.location[file_idx]) as image:
             processed_image = self.transform(image)
         return processed_image, label
@@ -221,6 +226,18 @@ def get_model(model_name, device):
         model.load_state_dict(checkpoint)
         model.to(device)
         transform = imagenet_transform
+    elif "BiT" in model_name and model_name in BiT_model_urls:
+        model = BiT_MODELS[model_name]()
+        model.load_from(np.load(BiT_model_urls[model_name]))
+        model = ModelEncapsulation(model)
+        model.to(device)
+        transform = transforms.Compose([
+            transforms.Resize(256, interpolation=Image.BICUBIC),
+            transforms.CenterCrop(224),
+            lambda image: image.convert("RGB"),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
     else:
         raise ValueError(f"{model_name} is not a valid model name.")
     return model, transform

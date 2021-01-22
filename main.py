@@ -19,6 +19,7 @@ if __name__ == '__main__':
         "CLIP-RN50",
         "virtex",
         "RN50",
+        "BiT-M-R50x1",
         "madry-imagenet_l2_3_0",
         "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
