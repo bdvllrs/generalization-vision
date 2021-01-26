@@ -29,6 +29,7 @@ if __name__ == '__main__':
     ]
     # Dataset to test on
     datasets = [
+        {"name": "HouseNumbers", "batch_size": 64, "root_dir": "/mnt/HD1/datasets/StreetViewHouseNumbers/format2"},
         {"name": "CUB", "batch_size": 64, "root_dir": "/mnt/HD1/datasets/CUB/CUB_200_2011"},
         {"name": "CIFAR100", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "MNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},

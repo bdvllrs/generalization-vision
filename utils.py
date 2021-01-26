@@ -13,6 +13,7 @@ from torch.utils import model_zoo
 from torchvision.datasets import CIFAR10, CIFAR100, MNIST, FashionMNIST
 from torchvision.models import resnet50
 from tqdm import tqdm
+from scipy.io import loadmat
 
 import clip
 from bit_model import KNOWN_MODELS as BiT_MODELS
@@ -97,6 +98,30 @@ class CUBDataset:
         with Image.open(self.root_dir / "images" / self.location[file_idx]) as image:
             processed_image = self.transform(image)
         return processed_image, label
+
+
+class HouseNumbersDataset:
+    def __init__(self, root_dir, train=True, transform=None):
+        self.root_dir = Path(root_dir)
+        self.transform = transform
+        image_path = "train_32x32.mat" if train else "test_32x32.mat"
+        self.image_path = self.root_dir / image_path
+        images = loadmat(str(self.image_path))
+        self.images = images['X'].transpose((3, 0, 1, 2))
+        self.labels = images['y']
+
+    def __len__(self):
+        return self.images.shape[0]
+
+    def __getitem__(self, item):
+        image, label = self.images[item], self.labels[item, 0]
+        image = Image.fromarray(image)
+        if self.transform is not None:
+            image = self.transform(image)
+        if label == 10:  # set index 0 for image of 0
+            label = 0
+        return image, label
+
 
 
 def plot_class_predictions(images, class_names, probs,
@@ -267,6 +292,10 @@ def get_dataset(dataset, transform):
         dataset_test = CUBDataset(dataset["root_dir"], train=False,
                                   transform=transform)
         class_names = list(map(str, range(200)))
+    elif dataset['name'] == "HouseNumbers":
+        dataset_train = HouseNumbersDataset(dataset['root_dir'], train=True, transform=transform)
+        dataset_test = HouseNumbersDataset(dataset['root_dir'], train=False, transform=transform)
+        class_names = list(map(str, range(10)))
     else:
         raise ValueError(f"{dataset['name']} is not a valid dataset name.")
 
