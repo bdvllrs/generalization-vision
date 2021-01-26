@@ -1,8 +1,6 @@
-import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.gridspec import GridSpec
 
 from utils import load_results
@@ -28,7 +26,7 @@ class PlotMarker:
 
 
 if __name__ == '__main__':
-    result_id = 5
+    result_id = 7
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
 
@@ -46,8 +44,9 @@ if __name__ == '__main__':
         ax = fig.add_subplot(gs[k // 3, k % 3])
         for model, model_accuracies in accuracies.items():
             if dataset['name'] in model_accuracies:
-                x = list(model_accuracies[dataset['name']].keys())
-                y_mean, y_std = zip(*model_accuracies[dataset['name']].values())
+                items = sorted(model_accuracies[dataset['name']].items(), key=lambda x: x[0])
+                x, y = zip(*items)
+                y_mean, y_std = zip(*y)
 
                 ax.errorbar(x, y_mean, y_std, None, plot_marker.get_marker(), label=model)
 
@@ -57,6 +56,28 @@ if __name__ == '__main__':
         ax.set_ylabel("Accuracy")
         ax.set_xlabel("Number of prototypes per class")
     fig.suptitle("Few-shot accuracies on various datasets and models")
+    plt.savefig(f"results/{result_id}/plot.svg", format="svg")
+    plt.show()
+
+    fig = plt.figure(figsize=(5 * n_cols, 5 * n_rows))
+    gs = GridSpec(n_rows, n_cols, figure=fig, wspace=0.4, hspace=0.4)
+
+    for k, dataset in enumerate(config['datasets']):
+        plot_marker.reset()
+        ax = fig.add_subplot(gs[k // 3, k % 3])
+        for i, (model, model_accuracies) in enumerate(accuracies.items()):
+            if dataset['name'] in model_accuracies:
+                items = sorted(model_accuracies[dataset['name']].items(), key=lambda x: x[0])
+                x, y = zip(*items)
+                mean, std = zip(*y)
+                ax.bar([i * 0.35], mean[1], 0.35, yerr=std[1], label=model)
+
+        if k == 0:
+            ax.legend()
+        ax.set_title(dataset['name'])
+        ax.set_ylabel("Accuracy")
+    fig.suptitle("Few-shot accuracies on various datasets and models")
+    plt.savefig(f"results/{result_id}/plot_bar.svg", format="svg")
     plt.show()
 
     print(config)
