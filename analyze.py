@@ -27,6 +27,7 @@ class PlotMarker:
 
 if __name__ == '__main__':
     result_id = 7
+    idx_prototypes_bar_plot = 1
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
 
@@ -70,7 +71,7 @@ if __name__ == '__main__':
                 items = sorted(model_accuracies[dataset['name']].items(), key=lambda x: x[0])
                 x, y = zip(*items)
                 mean, std = zip(*y)
-                ax.bar([i * 0.35], mean[1], 0.35, yerr=std[1], label=model)
+                ax.bar([i * 0.35], mean[idx_prototypes_bar_plot], 0.35, yerr=std[idx_prototypes_bar_plot], label=model)
 
         if k == 0:
             ax.legend()
