@@ -11,7 +11,7 @@ from utils import evaluate_dataset, get_prototypes, get_model, get_dataset, Rand
 if __name__ == '__main__':
     device = "cuda:2" if torch.cuda.is_available() else "cpu"
 
-    load_results_id = 5
+    load_results_id = 7
 
     # Models to test
     model_names = [
@@ -103,7 +103,7 @@ if __name__ == '__main__':
                                 f"{model_name}. {dataset['name']}. {n_proto} prototype(s). Trial {k + 1} / {n_trials}.")
 
                             # Define class prototypes
-                            class_features = get_prototypes(model, dataset_train.randomize(), device,
+                            class_features, _, _ = get_prototypes(model, dataset_train.randomize(), device,
                                                             n_examples_per_class=n_proto, n_classes=len(class_names))
                             accuracy, confusion_matrix = evaluate_dataset(model, dataset_test, class_features,
                                                                           list(range(len(class_names))), device,

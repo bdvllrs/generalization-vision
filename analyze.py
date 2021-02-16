@@ -26,7 +26,7 @@ class PlotMarker:
 
 
 if __name__ == '__main__':
-    result_id = 7
+    result_id = 9
     idx_prototypes_bar_plot = 1
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
