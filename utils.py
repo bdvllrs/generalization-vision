@@ -14,6 +14,7 @@ from torch.utils import model_zoo
 from torchvision.datasets import CIFAR10, CIFAR100, MNIST, FashionMNIST, ImageNet
 from torchvision.models import resnet50
 from tqdm import tqdm
+from transformers import AutoTokenizer, AutoModelWithLMHead, pipeline
 
 import clip
 from bit_model import KNOWN_MODELS as BiT_MODELS
@@ -49,6 +50,7 @@ class ModelEncapsulation(torch.nn.Module):
         super().__init__()
         self.module = model
         self.has_text_encoder = False
+        self.has_image_encoder = True
 
     def encode_image(self, images):
         return self.module(images)
@@ -59,12 +61,45 @@ class CLIPLanguageModel(torch.nn.Module):
         super().__init__()
         self.module = model
         self.has_text_encoder = True
+        self.has_image_encoder = True
 
     def encode_image(self, image):
         return self.module.encode_image(image)
 
-    def encode_text(self, text):
+    def encode_text(self, text, device, class_token_position=0):
+        text = clip.tokenize(text).to(device)
         return self.module.encode_text(text)
+
+
+class GPT2Model(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.transformer_model = AutoModelWithLMHead.from_pretrained("gpt2")
+        self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+
+        self.has_text_encoder = True
+        self.has_image_encoder = False
+
+    def encode_text(self, text, device, class_token_position=0):
+        inputs = self.tokenizer(text, return_tensors="pt", padding=True)
+        hidden_states = self.transformer_model(**inputs, output_hidden_states=True)['hidden_states']
+        return hidden_states[class_token_position + 1]  # +1 for start token
+
+
+class BERTModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.transformer_model = pipeline("feature-extraction", "bert-base-uncased")
+
+        self.has_text_encoder = True
+        self.has_image_encoder = False
+
+    def encode_text(self, text, device, class_token_position=0):
+        embedding = torch.tensor(self.transformer_model(text))
+        return torch.tensor(embedding)[:, class_token_position + 1]  # +1 for start token
 
 
 class RandomizedDataset:
@@ -324,6 +359,16 @@ def get_model(model_name, device):
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
+    # Language models
+    elif model_name == "BERT":
+        model = BERTModel()
+        transform = None
+    elif model_name == "GPT2":
+        model = GPT2Model()
+        transform = None
+    elif model_name == "Word2Vec":
+        #TODO
+        raise ValueError(f"{model_name} is not a valid model name.")
     else:
         raise ValueError(f"{model_name} is not a valid model name.")
     return model, transform
@@ -376,8 +421,10 @@ def get_dataset(dataset, transform):
     return dataset_train, dataset_test, class_names, caption_class_position
 
 
-def language_model_features(language_model, captions, class_token_position=0):
-    return torch.tensor(language_model(captions))[class_token_position + 1]  # +1 for start token
+def language_model_features(language_model, tokenizer, captions, class_token_position=0):
+    inputs = tokenizer(captions)
+    hidden_states = language_model(inputs, output_hidden_states=True)['hidden_states']
+    return hidden_states[class_token_position + 1]  # +1 for start token
 
 
 def cca_plot_helper(arr, xlabel, ylabel):

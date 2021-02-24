@@ -5,7 +5,7 @@ import numpy as np
 import scipy
 import torch
 from scipy.spatial.distance import squareform
-from transformers import pipeline
+from transformers import AutoTokenizer, AutoModelWithLMHead
 
 from clip import tokenize
 from utils import get_prototypes, get_model, get_dataset, language_model_features, save_corr_results, load_corr_results, \
@@ -44,7 +44,11 @@ if __name__ == '__main__':
 
     caption_sentence_prototypes = [("a photo of {classname}.", 3), ("{classname}.", 0)]
 
-    transformer_model = pipeline("feature-extraction", "bert-base-uncased")
+    transformer_model = AutoModelWithLMHead.from_pretrained("gpt2")
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    # inputs = tokenizer.encode(
+    #     "a photo of a bird.",
+    #     return_tensors="pt")
 
     # features = np.array(transformer_model(["a photo of a dog"])).mean(axis=1)
 
@@ -156,7 +160,7 @@ if __name__ == '__main__':
 
                             for caption_prototype, class_token_position in caption_sentence_prototypes:
                                 captions = [caption_prototype.format(classname=classname) for classname in class_names]
-                                language_features = language_model_features(transformer_model,
+                                language_features = language_model_features(transformer_model, tokenizer,
                                                                             captions, class_token_position + caption_class_location).to(class_features)
                                 rdm_language = squareform(get_rdm(language_features), checks=False)
                                 corr_language = scipy.stats.pearsonr(rdm_model, rdm_language)[0]
