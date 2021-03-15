@@ -33,6 +33,7 @@ geirhos_model_urls = {
 }
 
 madry_model_folder = os.path.join(os.getenv("TORCH_HOME", "~/.cache/torch"), "checkpoints")
+vissl_model_folder = os.path.join(os.getenv("TORCH_HOME", "~/.cache/torch"), "checkpoints")
 madry_models = ["imagenet_l2_3_0", "imagenet_linf_4", "imagenet_linf_8"]
 
 imagenet_norm_mean, imagenet_norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
@@ -292,7 +293,7 @@ def get_prototypes(model_, train_set, device, n_examples_per_class=5, n_classes=
         feature = model_.encode_image(imgs)
         feature /= feature.norm(dim=-1, keepdim=True)
         features.append(feature.mean(0))
-        std.append(feature)
+        std.append(feature.std(0))
     return torch.stack(features, dim=0), torch.stack(std, dim=0), torch.ones(len(std)).fill_(n_examples_per_class)
 
 def t_test(x, y, x_std, y_std, count_x, count_y):
@@ -335,6 +336,7 @@ def get_model(model_name, device):
                                         map_location=torch.device('cpu'))
         model = ModelEncapsulation(model)
         model.load_state_dict(checkpoint["state_dict"])
+        model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
         transform = imagenet_transform
     elif "madry" in model_name and model_name.replace("madry-", "") in madry_models:
@@ -345,6 +347,7 @@ def get_model(model_name, device):
                       "module.model" in mod_name}
         model = ModelEncapsulation(model)
         model.load_state_dict(checkpoint)
+        model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
         transform = imagenet_transform
     elif "BiT" in model_name and model_name in BiT_model_urls:
@@ -359,6 +362,27 @@ def get_model(model_name, device):
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
+    elif model_name == "semi-supervised-YFCC100M":
+        model = resnet50(pretrained=False)
+        checkpoint = torch.load(os.path.join(vissl_model_folder, "converted_vissl_rn50_semi_sup_08389792.torch"),
+                                map_location=torch.device('cpu'))['model_state_dict']
+        checkpoint = {mod_name.replace("_feature_blocks", "module"): mod_param for mod_name, mod_param in checkpoint.items()}
+        model = ModelEncapsulation(model)
+        model.load_state_dict(checkpoint)
+        model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        model.to(device)
+        transform = imagenet_transform
+    elif model_name == "semi-weakly-supervised-instagram":
+        model = resnet50(pretrained=False)
+        checkpoint = torch.load(os.path.join(vissl_model_folder, "converted_vissl_rn50_semi_weakly_sup_16a12f1b.torch"),
+                                map_location=torch.device('cpu'))['model_state_dict']
+        checkpoint = {mod_name.replace("_feature_blocks", "module"): mod_param for mod_name, mod_param in
+                      checkpoint.items()}
+        model = ModelEncapsulation(model)
+        model.load_state_dict(checkpoint)
+        model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        model.to(device)
+        transform = imagenet_transform
     # Language models
     elif model_name == "BERT":
         model = BERTModel()
@@ -462,7 +486,7 @@ def project_rdms(rdm_resnet, rdm_bert, rdm_model):
 
 def save_results(results_path, accuracies, confusion_matrices, config):
     print(f"Saving results in {str(results_path)}...")
-    results_path.mkdir()
+    results_path.mkdir(exist_ok=True)
     np.save(str(results_path / "accuracies.npy"), accuracies)
     np.save(str(results_path / "confusion_matrices.npy"), confusion_matrices)
     with open(str(results_path / "config.json"), "w") as config_file:

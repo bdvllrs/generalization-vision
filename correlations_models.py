@@ -21,7 +21,7 @@ def load_corr_results(results_path):
 
 def save_corr_results(results_path, corr, feature_cache, config):
     print(f"Saving results in {str(results_path)}...")
-    results_path.mkdir()
+    results_path.mkdir(exist_ok=True)
     np.save(str(results_path / "correlations.npy"), corr)
     np.save(str(results_path / "feature_cache.npy"), feature_cache)
     with open(str(results_path / "config.json"), "w") as config_file:
@@ -29,12 +29,20 @@ def save_corr_results(results_path, corr, feature_cache, config):
 
 
 if __name__ == '__main__':
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = "cuda:2" if torch.cuda.is_available() else "cpu"
 
-    load_results_id = 40
+    load_results_id = 53
 
     # Models to test
     model_names = [
+        "semi-supervised-YFCC100M",
+        "semi-weakly-supervised-instagram",
+        "madry-imagenet_l2_3_0",
+        "madry-imagenet_linf_4",
+        "madry-imagenet_linf_8",
+        "geirhos-resnet50_trained_on_SIN",
+        "geirhos-resnet50_trained_on_SIN_and_IN",
+        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
         "BERT",
         "GPT2",
         # "Word2Vec",
@@ -42,12 +50,6 @@ if __name__ == '__main__':
         "RN50",
         "virtex",
         "BiT-M-R50x1",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
-        "geirhos-resnet50_trained_on_SIN",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
     ]
     # Dataset to test on
     datasets = [
@@ -70,6 +72,7 @@ if __name__ == '__main__':
     result_idx = max(existing_folders) + 1 if len(existing_folders) else 0
 
     results_path = results_path / str(result_idx)
+    results_path.mkdir()
 
     config = {
         "model_names": model_names,
@@ -81,6 +84,17 @@ if __name__ == '__main__':
     else:
         correlations = dict()
         model_features_cache = {}
+
+    items_to_remove = [
+        # "geirhos-resnet50_trained_on_SIN",
+        # "geirhos-resnet50_trained_on_SIN_and_IN",
+        # "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        # "madry-imagenet_l2_3_0",
+        # "madry-imagenet_linf_4",
+        # "madry-imagenet_linf_8",
+    ]
+    for item in items_to_remove:
+        del model_features_cache[item]
 
     try:
         with torch.no_grad():

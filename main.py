@@ -11,30 +11,32 @@ from utils import evaluate_dataset, get_prototypes, get_model, get_dataset, Rand
 if __name__ == '__main__':
     device = "cuda:2" if torch.cuda.is_available() else "cpu"
 
-    load_results_id = 7
+    load_results_id = 56
 
     # Models to test
     model_names = [
-        "CLIP-ViT-B/32",
-        "CLIP-RN50",
-        "virtex",
+        # "semi-supervised-YFCC100M",
+        # "semi-weakly-supervised-instagram",
         "RN50",
-        "BiT-M-R50x1",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
         "geirhos-resnet50_trained_on_SIN",
         "geirhos-resnet50_trained_on_SIN_and_IN",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        "madry-imagenet_l2_3_0",
+        "madry-imagenet_linf_4",
+        "madry-imagenet_linf_8",
+        "CLIP-ViT-B/32",
+        "CLIP-RN50",
+        "virtex",
+        "BiT-M-R50x1",
     ]
     # Dataset to test on
     datasets = [
+        {"name": "CIFAR10", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "HouseNumbers", "batch_size": 64, "root_dir": "/mnt/HD1/datasets/StreetViewHouseNumbers/format2"},
         {"name": "CUB", "batch_size": 64, "root_dir": "/mnt/HD1/datasets/CUB/CUB_200_2011"},
         {"name": "CIFAR100", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "MNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "FashionMNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "CIFAR10", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
     ]
     # Number of prototypes per class and number of trials for each number of prototype
     prototypes_trials = {n_proto: 10 for n_proto in [1, 5, 10]}
@@ -49,6 +51,7 @@ if __name__ == '__main__':
     result_idx = max(existing_folders) + 1 if len(existing_folders) else 0
 
     results_path = results_path / str(result_idx)
+    results_path.mkdir()
 
     config = {
         "model_names": model_names,
@@ -61,6 +64,19 @@ if __name__ == '__main__':
     else:
         accuracies = dict()
         confusion_matrices = dict()
+
+    items_to_remove = [
+        "geirhos-resnet50_trained_on_SIN",
+        "geirhos-resnet50_trained_on_SIN_and_IN",
+        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        "madry-imagenet_l2_3_0",
+        "madry-imagenet_linf_4",
+        "madry-imagenet_linf_8",
+        "RN50",
+    ]
+    for item in items_to_remove:
+        del accuracies[item]
+        del confusion_matrices[item]
 
     try:
         with torch.no_grad():
@@ -79,7 +95,7 @@ if __name__ == '__main__':
                         confusion_matrices[model_name][dataset['name']] = dict()
 
                     # Get dataset
-                    dataset_train, dataset_test, class_names = get_dataset(dataset, transform)
+                    dataset_train, dataset_test, class_names, _ = get_dataset(dataset, transform)
                     dataset_train = RandomizedDataset(dataset_train)
 
                     for n_proto in prototypes_trials.keys():
@@ -116,7 +132,7 @@ if __name__ == '__main__':
                                                                             np.std(trial_accuracies, axis=0))
                         confusion_matrices[model_name][dataset['name']][n_proto] = np.mean(confusion_matrix, axis=0)
 
-                        print(f"Accuracy: {accuracy}")
+                        print(f"Accuracy: {np.mean(trial_accuracies, axis=0)}")
                         if plot_images:
                             plt.imshow(confusion_matrix)
                             plt.title(
