@@ -291,7 +291,7 @@ def get_prototypes(model_, train_set, device, n_examples_per_class=5, n_classes=
     for proto_imgs in prototypes:
         imgs = torch.stack(proto_imgs, dim=0).to(device)
         feature = model_.encode_image(imgs)
-        feature /= feature.norm(dim=-1, keepdim=True)
+        # feature /= feature.norm(dim=-1, keepdim=True)
         features.append(feature.mean(0))
         std.append(feature.std(0))
     return torch.stack(features, dim=0), torch.stack(std, dim=0), torch.ones(len(std)).fill_(n_examples_per_class)

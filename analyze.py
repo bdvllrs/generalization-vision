@@ -72,7 +72,7 @@ chance_levels = {
 }
 
 if __name__ == '__main__':
-    result_id = 56
+    result_id = 75
     idx_prototypes_bar_plot = 1
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
@@ -114,32 +114,32 @@ if __name__ == '__main__':
             ax.set_xlabel("")
     # fig.suptitle("Few-shot accuracies on various datasets and models")
     plt.tight_layout(.5)
-    plt.savefig(f"results/{result_id}/few-shot-acc.svg", format="svg")
+    plt.savefig(f"results/{result_id}/few-shot-acc.eps", format="eps")
     plt.show()
 
-    fig = plt.figure(figsize=(5 * n_cols, 5 * n_rows))
-    gs = GridSpec(n_rows, n_cols, figure=fig, wspace=0.4, hspace=0.4)
-
-    for k, dataset in enumerate(config['datasets']):
-        plot_marker.reset()
-        ax = fig.add_subplot(gs[k // 3, k % 3])
-        for i, (model, model_accuracies) in enumerate(accuracies.items()):
-            if dataset['name'] in model_accuracies and model in model_names_short:
-                items = sorted(model_accuracies[dataset['name']].items(), key=lambda x: x[0])
-                x, y = zip(*items)
-                mean, std = zip(*y)
-                ax.bar([i * 0.35], mean[idx_prototypes_bar_plot], 0.35, yerr=std[idx_prototypes_bar_plot], label=model_names_short[model])
-
-        if k == 0:
-            ax.legend()
-        ax.set_title(dataset['name'])
-        ax.set_xticks([])
-        if k == 0:
-            ax.set_ylabel("Accuracy")
-        ax.set_xlabel("")
-
-    fig.suptitle("5-shot accuracies on various datasets and models")
-    plt.savefig(f"results/{result_id}/plot_bar.svg", format="svg")
-    plt.show()
+    # fig = plt.figure(figsize=(5 * n_cols, 5 * n_rows))
+    # gs = GridSpec(n_rows, n_cols, figure=fig, wspace=0.4, hspace=0.4)
+    #
+    # for k, dataset in enumerate(config['datasets']):
+    #     plot_marker.reset()
+    #     ax = fig.add_subplot(gs[k // 3, k % 3])
+    #     for i, (model, model_accuracies) in enumerate(accuracies.items()):
+    #         if dataset['name'] in model_accuracies and model in model_names_short:
+    #             items = sorted(model_accuracies[dataset['name']].items(), key=lambda x: x[0])
+    #             x, y = zip(*items)
+    #             mean, std = zip(*y)
+    #             ax.bar([i * 0.35], mean[idx_prototypes_bar_plot], 0.35, yerr=std[idx_prototypes_bar_plot], label=model_names_short[model])
+    #
+    #     if k == 0:
+    #         ax.legend()
+    #     ax.set_title(dataset['name'])
+    #     ax.set_xticks([])
+    #     if k == 0:
+    #         ax.set_ylabel("Accuracy")
+    #     ax.set_xlabel("")
+    #
+    # fig.suptitle("5-shot accuracies on various datasets and models")
+    # plt.savefig(f"results/{result_id}/plot_bar.svg", format="svg")
+    # plt.show()
 
     print(config)

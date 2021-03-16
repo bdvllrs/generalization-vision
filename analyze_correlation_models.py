@@ -122,12 +122,12 @@ if __name__ == '__main__':
     plt.show()
 
     # tSNE
-    tsne = TSNE(n_components=2, verbose=1, perplexity=3, n_iter=1000, learning_rate=200, min_grad_norm=0)
-    X_pca = tsne.fit_transform(X)
+    tsne = TSNE(n_components=2, perplexity=3, learning_rate=1, min_grad_norm=0, metric="correlation")
+    X_tsne = tsne.fit_transform(X)
     plt.figure(figsize=(figsize, figsize))
     # ax = fig.add_subplot(111, projection='3d')
-    plt.scatter(X_pca[:, 0], X_pca[:, 1], c=colors)
-    for xc, yc, t in zip(X_pca[:, 0], X_pca[:, 1], y_short):
+    plt.scatter(X_tsne[:, 0], X_tsne[:, 1], c=colors)
+    for xc, yc, t in zip(X_tsne[:, 0], X_tsne[:, 1], y_short):
         plt.text(xc, yc, t)
     # plt.title("t-SNE of RDMs")
     plt.tight_layout(.5)

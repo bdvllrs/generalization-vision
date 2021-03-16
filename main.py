@@ -17,7 +17,6 @@ if __name__ == '__main__':
     model_names = [
         # "semi-supervised-YFCC100M",
         # "semi-weakly-supervised-instagram",
-        "RN50",
         "geirhos-resnet50_trained_on_SIN",
         "geirhos-resnet50_trained_on_SIN_and_IN",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
@@ -28,6 +27,7 @@ if __name__ == '__main__':
         "CLIP-RN50",
         "virtex",
         "BiT-M-R50x1",
+        "RN50",
     ]
     # Dataset to test on
     datasets = [
@@ -72,7 +72,6 @@ if __name__ == '__main__':
         "madry-imagenet_l2_3_0",
         "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
-        "RN50",
     ]
     for item in items_to_remove:
         del accuracies[item]

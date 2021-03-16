@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
 
     n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
-    ax = axes[0]
+    ax = axes[-1]
 
     models = {'chance': []}
 
@@ -97,7 +97,7 @@ if __name__ == '__main__':
                     yerr=(np.std(accuracies) / np.sqrt(len(accuracies))), label=model_names_short[model_name])
     ax.axhline(np.mean(models['chance']), linestyle="--", color="black", label="Average chance level")
     ax.set_title("Clustering")
-    ax.set_ylabel("Accuracy")
+    # ax.set_ylabel("Accuracy")
     ax.legend()
     ax.set_xticks([])
     ax.set_xlabel("")
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     print(config)
 
 
-    result_id = 56
+    result_id = 75
     idx_prototypes_bar_plot = 1
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     datasets = {dataset['name']: dataset for dataset in config['datasets']}
 
     for m, few_shot_index in enumerate(few_shot_indices):
-        ax = axes[m + 1]
+        ax = axes[m]
 
         models = {'chance': []}
 
@@ -137,11 +137,12 @@ if __name__ == '__main__':
 
         ax.axhline(np.mean(models['chance']), linestyle="--", color="black", label="Average chance level")
         ax.set_title(f"{few_shot_index}-shot")
-        ax.set_ylabel("Accuracy")
+        if m == 0:
+            ax.set_ylabel("Accuracy")
         ax.set_xticks([])
         ax.set_xlabel("")
 
     plt.tight_layout(.5)
     # fig.suptitle("Few-shot accuracies on various datasets and models")
-    plt.savefig(f"results/{result_id}/averaged_performances.svg", format="svg")
+    plt.savefig(f"results/{result_id}/averaged_performances.eps", format="eps")
     plt.show()
