@@ -134,7 +134,7 @@ if __name__ == '__main__':
                         all_features, labels = get_set_features(model, dataset_test, device,
                                                                 batch_size=dataset['batch_size'])
                         clustering_algorithm = AgglomerativeClustering(n_clusters=len(class_names),
-                                                                  affinity="correlation",
+                                                                  affinity="cosine",
                                                                   linkage="average")
                         predicted_labels = clustering_algorithm.fit_predict(all_features)
                         # Only keep val labels

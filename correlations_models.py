@@ -15,14 +15,18 @@ def load_corr_results(results_path):
         config = json.load(f)
 
     corr = np.load(results_path / "correlations.npy", allow_pickle=True).item()
+    significance = dict()
+    if (results_path / "correlations.npy").exists():
+        significance = np.load(results_path / "correlations.npy", allow_pickle=True).item()
     feature_cache = np.load(results_path / "feature_cache.npy", allow_pickle=True).item()
-    return corr, feature_cache, config
+    return corr, significance, feature_cache, config
 
 
-def save_corr_results(results_path, corr, feature_cache, config):
+def save_corr_results(results_path, corr, significance, feature_cache, config):
     print(f"Saving results in {str(results_path)}...")
     results_path.mkdir(exist_ok=True)
     np.save(str(results_path / "correlations.npy"), corr)
+    np.save(str(results_path / "significance.npy"), significance)
     np.save(str(results_path / "feature_cache.npy"), feature_cache)
     with open(str(results_path / "config.json"), "w") as config_file:
         json.dump(config, config_file, indent=4)
@@ -35,8 +39,8 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
-        "semi-supervised-YFCC100M",
-        "semi-weakly-supervised-instagram",
+        # "semi-supervised-YFCC100M",
+        # "semi-weakly-supervised-instagram",
         "madry-imagenet_l2_3_0",
         "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
@@ -80,9 +84,10 @@ if __name__ == '__main__':
     }
 
     if load_results_id is not None:
-        correlations, model_features_cache, loaded_config = load_corr_results(Path(f"results/{load_results_id}"))
+        correlations, significance, model_features_cache, loaded_config = load_corr_results(Path(f"results/{load_results_id}"))
     else:
         correlations = dict()
+        significance = dict()
         model_features_cache = {}
 
     items_to_remove = [
@@ -128,12 +133,16 @@ if __name__ == '__main__':
             # Compute correlations between all models
             for model_1, rdm_model_1 in model_features_cache.items():
                 correlations[model_1] = {}
+                significance[model_1] = {}
                 for model_2, rdm_model_2 in model_features_cache.items():
-                    correlations[model_1][model_2] = scipy.stats.pearsonr(rdm_model_1, rdm_model_2)[0]
+                    r, p = scipy.stats.pearsonr(rdm_model_1, rdm_model_2)
+                    correlations[model_1][model_2] = r
+                    significance[model_1][model_2] = p
 
         print(correlations)
-        save_corr_results(results_path, correlations, model_features_cache, config)
+        print(significance)
+        save_corr_results(results_path, correlations, significance, model_features_cache, config)
     except Exception as e:
         print("An error occurred... Saving results so far.")
-        save_corr_results(results_path, correlations, model_features_cache, config)
+        save_corr_results(results_path, correlations, significance, model_features_cache, config)
         raise e

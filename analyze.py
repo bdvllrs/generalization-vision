@@ -51,13 +51,17 @@ markers = {
     # "CLIP-RN50_text": ("xkcd:indigo", "."),
     "virtex": ("xkcd:blue", "--"),
     "RN50": ("xkcd:orange", "-"),
-    "BiT-M-R50x1": ("xkcd:hot pink", "-"),
+    "BiT-M-R50x1": ("xkcd:puce", "-"),
     "madry-imagenet_l2_3_0": ("xkcd:red", "-"),
     "madry-imagenet_linf_4": ("xkcd:red", "--"),
     "madry-imagenet_linf_8": ("xkcd:red", ":"),
     "geirhos-resnet50_trained_on_SIN": ("xkcd:green", "-"),
     "geirhos-resnet50_trained_on_SIN_and_IN": ("xkcd:green", "--"),
     "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": ("xkcd:green", ":"),
+}
+
+dataset_name_plot = {
+    "HouseNumbers": "SVHN"
 }
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
@@ -72,7 +76,7 @@ chance_levels = {
 }
 
 if __name__ == '__main__':
-    result_id = 75
+    result_id = 76
     idx_prototypes_bar_plot = 1
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
@@ -105,7 +109,10 @@ if __name__ == '__main__':
             ax.legend()
         ax.set_xticks(x)
         ax.set_xlabel(x)
-        ax.set_title(dataset['name'])
+        if dataset['name'] in dataset_name_plot.keys():
+            ax.set_title(dataset_name_plot[dataset['name']])
+        else:
+            ax.set_title(dataset['name'])
         if k == 0:
             ax.set_ylabel("Accuracy")
             ax.set_xlabel("Number of prototypes per class")
@@ -114,7 +121,7 @@ if __name__ == '__main__':
             ax.set_xlabel("")
     # fig.suptitle("Few-shot accuracies on various datasets and models")
     plt.tight_layout(.5)
-    plt.savefig(f"results/{result_id}/few-shot-acc.eps", format="eps")
+    plt.savefig(f"results/{result_id}/few-shot-acc.svg", format="svg")
     plt.show()
 
     # fig = plt.figure(figsize=(5 * n_cols, 5 * n_rows))

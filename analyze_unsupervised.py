@@ -39,7 +39,7 @@ markers = {
     # "CLIP-RN50_text": ("xkcd:indigo", "."),
     "virtex": ("xkcd:blue", ""),
     "RN50": ("xkcd:orange", ""),
-    "BiT-M-R50x1": ("xkcd:hot pink", ""),
+    "BiT-M-R50x1": ("xkcd:puce", ""),
     "madry-imagenet_l2_3_0": ("xkcd:light red", ""),
     "madry-imagenet_linf_4": ("xkcd:red", ""),
     "madry-imagenet_linf_8": ("xkcd:dark red", ""),
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     print(config)
 
 
-    result_id = 75
+    result_id = 76
     idx_prototypes_bar_plot = 1
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
@@ -144,5 +144,5 @@ if __name__ == '__main__':
 
     plt.tight_layout(.5)
     # fig.suptitle("Few-shot accuracies on various datasets and models")
-    plt.savefig(f"results/{result_id}/averaged_performances.eps", format="eps")
+    plt.savefig(f"results/{result_id}/averaged_performances.svg", format="svg")
     plt.show()
