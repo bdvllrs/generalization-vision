@@ -5,7 +5,10 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import ImageNet
 from tqdm import tqdm
 from nltk.corpus import wordnet as wn
+from sklearn.decomposition import PCA
+import numpy as np
 
+from datasets import RandomizedDataset
 from skip_gram_model import SkipGramModel
 from utils import get_model, get_set_features, get_prototypes
 from wiki_data_utils import DataReader, Word2vecDataset
@@ -22,15 +25,25 @@ class FrozenEmbeddings:
             n_classes=len(self.image_net.classes), batch_size=batch_size
         )
 
+        self.class_features.to("cpu")
+        self.class_features_std.to("cpu")
+        self.class_feature_counts.to("cpu")
+
         self.build_vocabulary()
 
     def build_vocabulary(self):
         for k, classes in enumerate(self.image_net.classes):
+            cls_synsets = {}
             for cls in classes:
-                synsets = wn.synsets(cls)
+                synsets = wn.synsets(cls.replace(' ', '_'))
                 for synset in synsets:
-                    if synset.name() not in self.vocabulary:
-                        self.vocabulary[synset.name()] = self.compute_class_embedding(k)
+                    if synset not in cls_synsets:
+                        cls_synsets[synset] = 1
+                    else:
+                        cls_synsets[synset] += 1
+            synset, _ = sorted(cls_synsets.items(), key=lambda x: x[1])[-1]
+            if synset.name() not in self.vocabulary:
+                self.vocabulary[synset.name()] = self.compute_class_embedding(k)
 
     def compute_class_embedding(self, index):
         return self.class_features[index]
@@ -44,14 +57,14 @@ class FrozenEmbeddings:
 
 
 class Word2VecTrainer:
-    def __init__(self, input_file, output_file, emb_dimension=100, batch_size=32, window_size=5, iterations=3,
-                 initial_lr=0.001, min_count=12, predefined_embeddings=None):
+    def __init__(self, dataset, output_file, emb_dimension=100, batch_size=16, iterations=3,
+                 initial_lr=0.001, predefined_embeddings=None):
 
         self.use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
 
-        self.data = DataReader(input_file, min_count)
-        dataset = Word2vecDataset(self.data, window_size)
+        self.data = dataset.data
+
         self.dataloader = DataLoader(dataset, batch_size=batch_size,
                                      shuffle=False, num_workers=0, collate_fn=dataset.collate)
 
@@ -60,14 +73,20 @@ class Word2VecTrainer:
         self.emb_dimension = emb_dimension
         frozen_embeddings = []
         frozen_embedding_id = []
-        for word, k in self.data.word2id.items():
-            embedding = predefined_embeddings.get_embedding(word)
-            if embedding is not None:
-                frozen_embeddings.append(embedding)
-                frozen_embedding_id.append(k)
+        if predefined_embeddings is not None:
+            for word, k in self.data.word2id.items():
+                embedding = predefined_embeddings.get_embedding(word)
+                if embedding is not None:
+                    frozen_embeddings.append(embedding)
+                    frozen_embedding_id.append(k)
 
-        self.frozen_embeddings = torch.stack(frozen_embeddings).to(self.device)
-        self.frozen_embedding_id = torch.tensor(frozen_embedding_id).to(self.device)
+            self.frozen_embeddings = np.stack(frozen_embeddings)
+            pca = PCA(n_components=emb_dimension)
+
+            self.frozen_embeddings = torch.from_numpy(pca.fit_transform(self.frozen_embeddings))
+            self.frozen_embedding_id = torch.tensor(frozen_embedding_id)
+        else:
+            self.frozen_embeddings, self.frozen_embedding_id = None, None
         self.batch_size = batch_size
         self.iterations = iterations
         self.initial_lr = initial_lr
@@ -80,7 +99,8 @@ class Word2VecTrainer:
         for iteration in range(self.iterations):
 
             print("\n\n\nIteration: " + str(iteration + 1))
-            optimizer = optim.SparseAdam(self.skip_gram_model.parameters(), lr=self.initial_lr)
+            params = [p for p in self.skip_gram_model.parameters() if p.requires_grad]
+            optimizer = optim.SparseAdam(params, lr=self.initial_lr)
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
 
             running_loss = 0.0
@@ -106,8 +126,34 @@ class Word2VecTrainer:
 
 if __name__ == '__main__':
     device = torch.device('cuda')
-    model, transform = get_model("RN50", device)
-    frozen_embeddings = FrozenEmbeddings(model, transform, os.path.expanduser("~/imagenet"), device)
+    model_names = [
+        "geirhos-resnet50_trained_on_SIN",
+        "geirhos-resnet50_trained_on_SIN_and_IN",
+        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        "madry-imagenet_l2_3_0",
+        "madry-imagenet_linf_4",
+        "madry-imagenet_linf_8",
+        "CLIP-ViT-B/32",
+        "CLIP-RN50",
+        "virtex",
+        "BiT-M-R50x1",
+        "RN50",
+    ]
+    input_file = "/mnt/SSD/datasets/enwiki/wiki.en.text"
+    min_count = 12
+    window_size = 5
 
-    w2v = Word2VecTrainer("/mnt/HD1/datasets/enwiki/wiki.en.text", "out.vec", predefined_embeddings=frozen_embeddings)
-    w2v.train()
+    data = DataReader(input_file, min_count)
+    dataset = Word2vecDataset(data, window_size)
+
+    for model_name in model_names:
+        print(f"Computing model {model_name}.")
+        model, transform = get_model(model_name, device)
+        frozen_embeddings = FrozenEmbeddings(model, transform, "/mnt/SSD/datasets/imagenet", device)
+
+        w2v = Word2VecTrainer(dataset, f"out_{model_name.replace('/', '_')}.vec",
+                              iterations=5,
+                              batch_size=8,
+                              emb_dimension=100,
+                              predefined_embeddings=frozen_embeddings)
+        w2v.train()

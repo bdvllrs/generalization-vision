@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
         print(acc)
         save_corr_results(results_path, acc, config)
-    except Exception as e:
-        print("An error occurred... Saving results so far.")
+    except BaseException as e:
+        print("Something happened... Saving results so far.")
         save_corr_results(results_path, acc, config)
         raise e

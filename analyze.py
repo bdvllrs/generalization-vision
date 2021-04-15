@@ -83,18 +83,17 @@ if __name__ == '__main__':
 
     datasets = {dataset['name']: dataset for dataset in config['datasets']}
 
-    plot_marker = PlotMarker(len(config['model_names']))
-
     n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
-    n_cols = n_datasets
-    n_rows = 1
+    n_cols = n_datasets // 2
+    n_rows = 2
     figsize = 3
 
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_datasets, figsize))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     for k, dataset_name in enumerate(dataset_order):
         dataset = datasets[dataset_name]
-        ax = axes[k]
+        i, j = k // n_cols, k % n_cols
+        ax = axes[i][j]
         for model, model_accuracies in accuracies.items():
             if dataset['name'] in model_accuracies and model in model_names_short:
                 items = sorted(model_accuracies[dataset['name']].items(), key=lambda x: x[0])

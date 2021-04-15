@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from utils import evaluate_dataset, get_prototypes, get_model, get_dataset, RandomizedDataset, save_results, \
+from utils import evaluate_dataset, get_prototypes, get_model, get_dataset, save_results, \
     load_results
+from datasets import RandomizedDataset
 
 if __name__ == '__main__':
     device = "cuda:2" if torch.cuda.is_available() else "cpu"
@@ -139,7 +140,7 @@ if __name__ == '__main__':
                             plt.show()
 
         save_results(results_path, accuracies, confusion_matrices, config)
-    except Exception as e:
-        print("An error occurred... Saving results so far.")
+    except BaseException as e:
+        print("Something happened... Saving results so far.")
         save_results(results_path, accuracies, confusion_matrices, config)
         raise e
