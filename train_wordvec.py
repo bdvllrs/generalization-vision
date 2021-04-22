@@ -106,6 +106,8 @@ class Word2VecTrainer:
 
     def train(self):
 
+        train_losses = []
+        val_losses = []
         for iteration in range(self.iterations):
 
             print("\n\n\nIteration: " + str(iteration + 1))
@@ -114,22 +116,40 @@ class Word2VecTrainer:
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
 
             running_loss = 0.0
+            val_loss = []
+            self.skip_gram_model.train()
             for i, sample_batched in enumerate(tqdm(self.dataloader)):
-
                 if len(sample_batched[0]) > 1:
                     pos_u = sample_batched[0].to(self.device)
                     pos_v = sample_batched[1].to(self.device)
                     neg_v = sample_batched[2].to(self.device)
 
-                    scheduler.step()
-                    optimizer.zero_grad()
-                    loss = self.skip_gram_model(pos_u, pos_v, neg_v)
-                    loss.backward()
-                    optimizer.step()
+                    # train
+                    if i < 0.8 * self.data.sentences_count:
+                        scheduler.step()
+                        optimizer.zero_grad()
+                        loss = self.skip_gram_model(pos_u, pos_v, neg_v)
+                        loss.backward()
+                        optimizer.step()
 
-                    running_loss = running_loss * 0.9 + loss.item() * 0.1
-                    if i > 0 and i % 500 == 0:
-                        print(" Loss: " + str(running_loss))
+                        train_losses.append(loss.detach().item())
+                        running_loss = running_loss * 0.9 + loss.item() * 0.1
+                        if i > 0 and i % 500 == 0:
+                            print(" Loss: " + str(running_loss))
+                    # test
+                    else:
+                        self.skip_gram_model.eval()
+                        with torch.no_grad():
+                            loss = self.skip_gram_model(pos_u, pos_v, neg_v)
+                            val_loss.append(loss.item())
+            val_losses.append(np.mean(val_loss))
+            print("Last train BPC:", train_losses[-1])
+            print("Val BPC:", val_losses[-1])
+
+            np.save(self.output_file_name.replace(".vec", "_losses.npy"), {
+                "train": train_losses,
+                "val": val_losses
+            })
 
             self.skip_gram_model.save_embedding(self.data.id2word, self.output_file_name)
 
@@ -137,18 +157,18 @@ class Word2VecTrainer:
 if __name__ == '__main__':
     device = torch.device('cuda:2')
     model_names = [
-        # "geirhos-resnet50_trained_on_SIN",
-        # "geirhos-resnet50_trained_on_SIN_and_IN",
         "BERT",
-        "GPT2",
+        "RN50",
         "CLIP-RN50",
         "BiT-M-R50x1",
-        "RN50",
         "madry-imagenet_l2_3_0",
         "virtex",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        "GPT2",
+        "madry-imagenet_linf_8",
+        "geirhos-resnet50_trained_on_SIN_and_IN",
+        "madry-imagenet_linf_4",
+        "geirhos-resnet50_trained_on_SIN",
     ]
     input_file = "/mnt/SSD/datasets/enwiki/wiki.en.text"
     min_count = 12
@@ -163,13 +183,11 @@ if __name__ == '__main__':
         print(f"Computing model {model_name}.")
         model, transform = get_model(model_name, device)
         if model_name in ['GPT', 'BERT']:
-            # # TODO: save the image frozen vocabulary to use the same with Text models.
-            # assert False, "Do TODO"
             frozen_embeddings = TextFrozenEmbeddings(model, device)
         else:
             frozen_embeddings = FrozenEmbeddings(model, transform, "/mnt/SSD/datasets/imagenet", device)
 
-        w2v = Word2VecTrainer(dataset, f"out_{model_name.replace('/', '_')}.vec", device,
+        w2v = Word2VecTrainer(dataset, f"wordvectors/out_{model_name.replace('/', '_')}.vec", device,
                               iterations=5,
                               batch_size=8,
                               emb_dimension=100,
