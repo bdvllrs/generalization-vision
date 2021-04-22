@@ -71,9 +71,14 @@ def load_corr_results(results_path):
         config = json.load(f)
 
     corr = np.load(results_path / "correlations.npy", allow_pickle=True).item()
-    significance = np.load(results_path / "significance.npy", allow_pickle=True).item()
+    significance = dict()
+    if (results_path / "correlations.npy").exists():
+        significance = np.load(results_path / "correlations.npy", allow_pickle=True).item()
     feature_cache = np.load(results_path / "feature_cache.npy", allow_pickle=True).item()
-    return corr, significance, feature_cache, config
+    dim_reducted_features = {}
+    if (results_path / "dim_reducted_features.npy").exists():
+        dim_reducted_features = np.load(results_path / "dim_reducted_features.npy", allow_pickle=True).item()
+    return corr, significance, feature_cache, dim_reducted_features, config
 
 def plot_dendrogram(model, **kwargs):
     # Create linkage matrix and then plot the dendrogram
@@ -97,23 +102,22 @@ def plot_dendrogram(model, **kwargs):
     dendrogram(linkage_matrix, **kwargs)
 
 if __name__ == '__main__':
-    result_id = 79
+    result_id = 174
     idx_prototypes_bar_plot = 1
 
     dataset = "ImageNet"
 
-    figsize = 4
+    figsize = 5
 
-    correlations, significance, features, config = load_corr_results(Path(f"results/{result_id}"))
+    correlations, significance, features, dim_reduced_features, config = load_corr_results(Path(f"results/{result_id}"))
 
-    y, X = zip(*features.items())
-    y_short = [model_names_short[name] for name in y]
-    colors = [color_scheme[name] for name in y]
-    X = np.stack(X, axis=0)
 
     # # UMAP
     # reducer = umap.UMAP(n_components=2, min_dist=0.05, n_neighbors=5, metric="correlation")
     # x_umap = reducer.fit_transform(X)
+    # x_umap = dim_reduced_features['umap']
+    # y_short = [model_names_short[name] for name in dim_reduced_features['labels']]
+    # colors = [color_scheme[name] for name in dim_reduced_features['labels']]
     # plt.figure(figsize=(figsize, figsize))
     # plt.scatter(x_umap[:, 0], x_umap[:, 1], c=colors)
     # for xc, yc, t in zip(x_umap[:, 0], x_umap[:, 1], y_short):
@@ -123,17 +127,30 @@ if __name__ == '__main__':
     # plt.savefig(f"results/{result_id}/umap_rdms.eps", format="eps")
     # plt.show()
 
-    # tSNE
+    # # tSNE
+    # tsne = TSNE(n_components=2, perplexity=3, learning_rate=1, min_grad_norm=0, metric="correlation")
+    # X_tsne = tsne.fit_transform(X)
+    X_tsne = dim_reduced_features['tsne']
+    y_short = [model_names_short[name] for name in dim_reduced_features['labels']]
+    colors = [color_scheme[name] for name in dim_reduced_features['labels']]
+
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(1.5*figsize, 0.8*figsize))
-    tsne = TSNE(n_components=2, perplexity=3, learning_rate=1, min_grad_norm=0, metric="correlation")
-    X_tsne = tsne.fit_transform(X)
     # ax = fig.add_subplot(111, projection='3d')
     ax = axes[1]
     ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=colors)
     for xc, yc, t in zip(X_tsne[:, 0], X_tsne[:, 1], y_short):
         ax.text(xc, yc, t, ha='center')
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    ax.set_aspect((x1 - x0) / (y1 - y0))
     ax.set_title("(b)")
     # plt.title("t-SNE of RDMs")
+
+
+    y, X = zip(*features.items())
+    y_short = [model_names_short[name] for name in y]
+    colors = [color_scheme[name] for name in y]
+    X = np.stack(X, axis=0)
 
     # Dendrogram
     ax = axes[0]
@@ -142,8 +159,11 @@ if __name__ == '__main__':
     # plt.title("Dendrogram of hierarchical clustering of RDMs. Average linkage.")
     plot_dendrogram(model, labels=y_short, leaf_rotation="vertical", ax=ax)
     ax.set_title("(a)")
-    plt.tight_layout(0.5)
-    plt.savefig(f"results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms_3.eps", format="eps")
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    ax.set_aspect((x1 - x0) / (y1 - y0))
+    plt.tight_layout(pad=1)
+    plt.savefig(f"results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms_3.svg", format="svg")
     plt.show()
 
     # # PCA
@@ -160,25 +180,27 @@ if __name__ == '__main__':
     # plt.savefig(f"results/{result_id}/pca_rdms.eps", format="eps")
     # plt.show()
     #
-    #
-    # mat = np.zeros((len(correlations), len(correlations)))
-    # pval = np.zeros((len(significance), len(significance)))
-    # labels = []
-    #
-    # # Correlation between models
-    # for i, (model_1, corrs) in enumerate(sorted(correlations.items())):
-    #     labels.append(model_names_short[model_1])
-    #     for j, (model_2, corr) in enumerate(sorted(corrs.items())):
-    #         mat[i, j] = corr
-    #         pval = significance[model_1][model_2]
-    #
-    # plt.figure(figsize=(figsize, figsize))
-    # sn.heatmap(mat, annot=True, xticklabels=labels, yticklabels=labels)
-    # # plt.title("Pearson correlations between RDMs of vision and text models.")
-    # plt.tight_layout(.5)
-    # plt.savefig(f"results/{result_id}/plot_corr.eps", format="eps")
-    # plt.show()
-    #
+
+    figsize = 10
+
+    mat = np.zeros((len(correlations), len(correlations)))
+    pval = np.zeros((len(significance), len(significance)))
+    labels = []
+
+    # Correlation between models
+    for i, (model_1, corrs) in enumerate(sorted(correlations.items())):
+        labels.append(model_names_short[model_1])
+        for j, (model_2, corr) in enumerate(sorted(corrs.items())):
+            mat[i, j] = corr
+            pval = significance[model_1][model_2]
+
+    plt.figure(figsize=(figsize, figsize))
+    sn.heatmap(mat, annot=True, xticklabels=labels, yticklabels=labels)
+    # plt.title("Pearson correlations between RDMs of vision and text models.")
+    plt.tight_layout(pad=.5)
+    plt.savefig(f"results/{result_id}/plot_corr.eps", format="eps")
+    plt.show()
+
     # plt.figure(figsize=(figsize, figsize))
     # sn.heatmap(pval, annot=True, xticklabels=labels, yticklabels=labels)
     # # plt.title("Pearson correlations between RDMs of vision and text models.")

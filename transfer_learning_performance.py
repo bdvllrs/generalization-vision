@@ -10,6 +10,8 @@ from tqdm import tqdm
 
 from utils import get_model, get_dataset
 from datasets import RandomizedDataset
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def load_results(results_path):
@@ -86,38 +88,38 @@ def train(dataset_train, dataset_val, model, probe, optimizer, scheduler, device
 if __name__ == '__main__':
     device = "cuda:2" if torch.cuda.is_available() else "cpu"
 
-    load_results_id = 162
+    load_results_id = 206
 
     # Models to test
     model_names = [
         # "semi-supervised-YFCC100M",
         # "semi-weakly-supervised-instagram",
-        "geirhos-resnet50_trained_on_SIN",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
-        "CLIP-ViT-B/32",
+        # "geirhos-resnet50_trained_on_SIN",
+        # "geirhos-resnet50_trained_on_SIN_and_IN",
+        # "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        # "madry-imagenet_l2_3_0",
+        # "madry-imagenet_linf_4",
+        # "madry-imagenet_linf_8",
+        # "CLIP-ViT-B/32",
         "CLIP-RN50",
-        "virtex",
-        "BiT-M-R50x1",
-        "RN50",
+        # "virtex",
+        # "BiT-M-R50x1",
+        # "RN50",
     ]
     # Dataset to test on
     datasets = [
         # {"name": "Birdsnap", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/birdsnap/birdsnap")},
-        {"name": "Caltech101", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/caltech101/101_ObjectCategories")},
-        {"name": "Caltech256", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/caltech256/256_ObjectCategories")},
-        {"name": "DTD", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/DescribableTextures/dtd")},
-        {"name": "FGVC-Aircraft", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/FGVC-Aircraft/fgvc-aircraft-2013b")},
-        {"name": "Food101", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/food101/food-101")},
-        {"name": "Flowers102", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/flowers102")},
-        {"name": "IIITPets", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/OxfordPets")},
-        {"name": "SUN397", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/SUN")},
+        # {"name": "Caltech101", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/caltech101/101_ObjectCategories")},
+        # {"name": "Caltech256", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/caltech256/256_ObjectCategories")},
+        # {"name": "DTD", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/DescribableTextures/dtd")},
+        # {"name": "FGVC-Aircraft", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/FGVC-Aircraft/fgvc-aircraft-2013b")},
+        # {"name": "Food101", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/food101/food-101")},
+        # {"name": "Flowers102", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/flowers102")},
+        # {"name": "IIITPets", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/OxfordPets")},
+        # {"name": "SUN397", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/SUN")},
         {"name": "StanfordCars", "batch_size": 80, "root_dir": os.path.expanduser("~/datasets/StanfordCars")},
-        {"name": "CIFAR10", "batch_size": 80, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "CIFAR100", "batch_size": 80, "root_dir": os.path.expanduser("~/.cache")},
+        # {"name": "CIFAR10", "batch_size": 80, "root_dir": os.path.expanduser("~/.cache")},
+        # {"name": "CIFAR100", "batch_size": 80, "root_dir": os.path.expanduser("~/.cache")},
         # {"name": "HouseNumbers", "batch_size": 64, "root_dir": "/mnt/HD1/datasets/StreetViewHouseNumbers/format2"},
         # {"name": "CUB", "batch_size": 64, "root_dir": "/mnt/HD1/datasets/CUB/CUB_200_2011"},
         # {"name": "MNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
@@ -127,7 +129,7 @@ if __name__ == '__main__':
     prototypes_trials = {n_proto: 10 for n_proto in [1, 5, 10]}
 
     lr = 1e-3
-    n_epochs = 20
+    n_epochs = 150
     n_workers = 8
 
     plot_images = False
@@ -158,6 +160,14 @@ if __name__ == '__main__':
             "val_acc": {}
         }
 
+    items_to_remove = [
+        "CLIP-RN50",
+    ]
+    for model in items_to_remove:
+        for item in data.keys():
+            if model in data[item]:
+                del data[item][model]
+
     try:
         for model_name in model_names:
             for item in data.keys():
@@ -182,7 +192,7 @@ if __name__ == '__main__':
 
                 linear_probe = torch.nn.Linear(model.out_dim, len(class_names)).to(device)
                 optimizer = torch.optim.Adam(linear_probe.parameters(), lr=lr, weight_decay=5e-4)
-                scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.1)
+                scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 50, 0.1)
 
                 train_losses, val_losses, val_acc = train(
                     dataset_train, dataset_test, model, linear_probe,

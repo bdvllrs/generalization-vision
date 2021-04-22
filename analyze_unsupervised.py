@@ -77,7 +77,8 @@ if __name__ == '__main__':
 
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
-    result_id = 46
+    # result_id = 46
+    result_id = 182
     idx_prototypes_bar_plot = 1
 
     accuracies, config = load_corr_results(Path(f"results/{result_id}"))
@@ -105,6 +106,7 @@ if __name__ == '__main__':
     ax.axhline(np.mean(models['chance']), linestyle="--", color="black", label="Average chance level")
     ax.set_title("Clustering")
     # ax.set_ylabel("Accuracy")
+    ax.set_ylim(top=0.8)
     ax.legend()
     ax.set_xticks([])
     ax.set_xlabel("")
@@ -112,7 +114,8 @@ if __name__ == '__main__':
     print(config)
 
 
-    result_id = 76
+    # result_id = 76
+    result_id = 168
     idx_prototypes_bar_plot = 1
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
@@ -146,6 +149,7 @@ if __name__ == '__main__':
         ax.set_title(f"{few_shot_index}-shot")
         if m == 0:
             ax.set_ylabel("Accuracy")
+        ax.set_ylim(top=0.8)
         ax.set_xticks([])
         ax.set_xlabel("")
 
@@ -155,46 +159,49 @@ if __name__ == '__main__':
     plt.show()
 
     # Dataset wise plots
-    result_id = 46
-    idx_prototypes_bar_plot = 1
-
-    accuracies, config = load_corr_results(Path(f"results/{result_id}"))
-
-    datasets = {dataset['name']: dataset for dataset in config['datasets']}
-
-    n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
-    n_cols = 4
-    n_rows = 2
-    figsize = 3
-
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
-
-    for k, dataset_name in enumerate(dataset_order):
-        dataset = datasets[dataset_name]
-        i, j = k // n_cols, k % n_cols
-        ax = axes[i][j]
-        for l, (model, model_accuracies) in enumerate(accuracies.items()):
-            if dataset['name'] in model_accuracies and model in model_names_short:
-                y = model_accuracies[dataset['name']]
-                color, hatch = markers[model]
-                ax.bar([l * 0.35], y, 0.35, color=color, hatch=hatch, label=model_names_short[model])
-
-        ax.axhline(chance_levels[dataset_name], linestyle="--", color="black", label="Chance level")
-
-        if k == 0:
-            ax.legend()
-        ax.set_xticks([])
-        ax.set_xlabel("")
-        if dataset['name'] in dataset_name_plot.keys():
-            ax.set_title(dataset_name_plot[dataset['name']])
-        else:
-            ax.set_title(dataset['name'])
-        if k == 0:
-            ax.set_ylabel("Accuracy")
-        else:
-            ax.set_ylabel("")
-            ax.set_xlabel("")
-    # fig.suptitle("Few-shot accuracies on various datasets and models")
-    plt.tight_layout(.5)
-    plt.savefig(f"results/{result_id}/clustering-acc.svg", format="svg")
-    plt.show()
+    # result_id = 46
+    # idx_prototypes_bar_plot = 1
+    #
+    # accuracies, config = load_corr_results(Path(f"results/{result_id}"))
+    #
+    # datasets = {dataset['name']: dataset for dataset in config['datasets']}
+    #
+    # n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
+    # n_cols = 3
+    # n_rows = 2
+    # figsize = 3
+    #
+    # fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
+    #
+    # for k, dataset_name in enumerate(dataset_order):
+    #     dataset = datasets[dataset_name]
+    #     i, j = k // n_cols, k % n_cols
+    #     ax = axes[i][j]
+    #     for l, (model, model_accuracies) in enumerate(accuracies.items()):
+    #         if dataset['name'] in model_accuracies and model in model_names_short:
+    #             y = model_accuracies[dataset['name']]
+    #             color, hatch = markers[model]
+    #             ax.bar([l * 0.35], y, 0.35, color=color, hatch=hatch, label=model_names_short[model])
+    #
+    #     ax.axhline(chance_levels[dataset_name], linestyle="--", color="black", label="Chance level")
+    #
+    #     if dataset_name == "HouseNumbers":
+    #         ax.set_ylim(top=0.35)
+    #
+    #     if k == 0:
+    #         ax.legend()
+    #     ax.set_xticks([])
+    #     ax.set_xlabel("")
+    #     if dataset['name'] in dataset_name_plot.keys():
+    #         ax.set_title(dataset_name_plot[dataset['name']])
+    #     else:
+    #         ax.set_title(dataset['name'])
+    #     if k == 0:
+    #         ax.set_ylabel("Accuracy")
+    #     else:
+    #         ax.set_ylabel("")
+    #         ax.set_xlabel("")
+    # # fig.suptitle("Few-shot accuracies on various datasets and models")
+    # plt.tight_layout(.5)
+    # plt.savefig(f"results/{result_id}/clustering-acc.svg", format="svg")
+    # plt.show()

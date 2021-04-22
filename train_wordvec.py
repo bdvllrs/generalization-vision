@@ -33,37 +33,47 @@ class FrozenEmbeddings:
 
     def build_vocabulary(self):
         for k, classes in enumerate(self.image_net.classes):
-            cls_synsets = {}
-            for cls in classes:
-                synsets = wn.synsets(cls.replace(' ', '_'))
-                for synset in synsets:
-                    if synset not in cls_synsets:
-                        cls_synsets[synset] = 1
-                    else:
-                        cls_synsets[synset] += 1
-            synset, _ = sorted(cls_synsets.items(), key=lambda x: x[1])[-1]
-            if synset.name() not in self.vocabulary:
-                self.vocabulary[synset.name()] = self.compute_class_embedding(k)
+            cls = classes[0]
+            synset = wn.synsets(cls.replace(' ', '_'))[0]
+            while len(cls.replace(" ", "_").split("_")) > 1:
+                synset = synset.hypernyms()[0]
+                cls = synset.lemmas()[0].name()
+            if cls.lower() not in self.vocabulary:
+                self.vocabulary[cls.lower()] = []
+            self.vocabulary[cls.lower()].append(self.compute_class_embedding(k))
+        for key, vectors in self.vocabulary.items():
+            self.vocabulary[key] = torch.stack(vectors, dim=0).mean(dim=0)
 
     def compute_class_embedding(self, index):
         return self.class_features[index]
 
     def get_embedding(self, name):
-        synsets = wn.synsets(name)
-        for synset in synsets:
-            if synset.name() in self.vocabulary.keys():
-                return self.vocabulary[synset.name()]
+        if name.lower() in self.vocabulary.keys():
+            return self.vocabulary[name.lower()]
+        return None
+
+
+class TextFrozenEmbeddings:
+    def __init__(self, model, device):
+        self.model = model
+        self.device = device
+        self.frozen_words = np.load("frozen_words.npy")
+
+    def get_embedding(self, name):
+        if name in self.frozen_words:
+            return self.model.encode_text(name, self.device)[0]
         return None
 
 
 class Word2VecTrainer:
-    def __init__(self, dataset, output_file, emb_dimension=100, batch_size=16, iterations=3,
+    def __init__(self, dataset, output_file, device, emb_dimension=100, batch_size=16, iterations=3,
                  initial_lr=0.001, predefined_embeddings=None):
 
         self.use_cuda = torch.cuda.is_available()
-        self.device = torch.device("cuda" if self.use_cuda else "cpu")
+        self.device = device
 
         self.data = dataset.data
+        # self.data = np.load("word2vec_data.npy", allow_pickle=True).item()
 
         self.dataloader = DataLoader(dataset, batch_size=batch_size,
                                      shuffle=False, num_workers=0, collate_fn=dataset.collate)
@@ -113,7 +123,7 @@ class Word2VecTrainer:
 
                     scheduler.step()
                     optimizer.zero_grad()
-                    loss = self.skip_gram_model.forward(pos_u, pos_v, neg_v)
+                    loss = self.skip_gram_model(pos_u, pos_v, neg_v)
                     loss.backward()
                     optimizer.step()
 
@@ -125,33 +135,41 @@ class Word2VecTrainer:
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda')
+    device = torch.device('cuda:2')
     model_names = [
-        "geirhos-resnet50_trained_on_SIN",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
-        "CLIP-ViT-B/32",
+        # "geirhos-resnet50_trained_on_SIN",
+        # "geirhos-resnet50_trained_on_SIN_and_IN",
+        "BERT",
+        "GPT2",
         "CLIP-RN50",
-        "virtex",
         "BiT-M-R50x1",
         "RN50",
+        "madry-imagenet_l2_3_0",
+        "virtex",
+        "madry-imagenet_linf_4",
+        "madry-imagenet_linf_8",
+        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
     ]
     input_file = "/mnt/SSD/datasets/enwiki/wiki.en.text"
     min_count = 12
     window_size = 5
 
-    data = DataReader(input_file, min_count)
+    data = np.load("word2vec_data.npy", allow_pickle=True).item()
+    # data = DataReader(input_file, min_count)
     dataset = Word2vecDataset(data, window_size)
+    # dataset = None
 
     for model_name in model_names:
         print(f"Computing model {model_name}.")
         model, transform = get_model(model_name, device)
-        frozen_embeddings = FrozenEmbeddings(model, transform, "/mnt/SSD/datasets/imagenet", device)
+        if model_name in ['GPT', 'BERT']:
+            # # TODO: save the image frozen vocabulary to use the same with Text models.
+            # assert False, "Do TODO"
+            frozen_embeddings = TextFrozenEmbeddings(model, device)
+        else:
+            frozen_embeddings = FrozenEmbeddings(model, transform, "/mnt/SSD/datasets/imagenet", device)
 
-        w2v = Word2VecTrainer(dataset, f"out_{model_name.replace('/', '_')}.vec",
+        w2v = Word2VecTrainer(dataset, f"out_{model_name.replace('/', '_')}.vec", device,
                               iterations=5,
                               batch_size=8,
                               emb_dimension=100,

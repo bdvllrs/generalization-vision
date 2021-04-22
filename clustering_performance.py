@@ -46,24 +46,24 @@ def permute_labels(target, prediction, num_labels):
 
 
 if __name__ == '__main__':
-    device = "cuda:2" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     load_results_id = 46
 
     # Models to test
     model_names = [
-        "semi-supervised-YFCC100M",
-        "semi-weakly-supervised-instagram",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
-        "geirhos-resnet50_trained_on_SIN",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        # "semi-supervised-YFCC100M",
+        # "semi-weakly-supervised-instagram",
+        # "madry-imagenet_l2_3_0",
+        # "madry-imagenet_linf_4",
+        # "madry-imagenet_linf_8",
+        # "geirhos-resnet50_trained_on_SIN",
+        # "geirhos-resnet50_trained_on_SIN_and_IN",
+        # "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
         "virtex",
-        "CLIP-RN50",
-        "RN50",
-        "BiT-M-R50x1",
+        # "CLIP-RN50",
+        # "RN50",
+        # "BiT-M-R50x1",
     ]
     # Dataset to test on
     datasets = [
@@ -97,12 +97,7 @@ if __name__ == '__main__':
         acc = dict()
 
     items_to_remove = [
-        "geirhos-resnet50_trained_on_SIN",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
+        "virtex",
     ]
     for item in items_to_remove:
         del acc[item]
@@ -137,9 +132,9 @@ if __name__ == '__main__':
                                                                   affinity="cosine",
                                                                   linkage="average")
                         predicted_labels = clustering_algorithm.fit_predict(all_features)
-                        # Only keep val labels
-                        predicted_labels = predicted_labels[len(dataset_train):]
-                        labels = labels[len(dataset_train):]
+                        # # Only keep val labels
+                        # predicted_labels = predicted_labels[len(dataset_train):]
+                        # labels = labels[len(dataset_train):]
                         # Compute accuracy
                         permuted_predicted_labels = permute_labels(labels, predicted_labels, len(class_names))
                         acc[model_name][dataset['name']] = (permuted_predicted_labels == labels).sum() / labels.shape[0]

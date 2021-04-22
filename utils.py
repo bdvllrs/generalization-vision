@@ -33,8 +33,8 @@ geirhos_model_urls = {
     # 'alexnet_trained_on_SIN': 'https://bitbucket.org/robert_geirhos/texture-vs-shape-pretrained-models/raw/0008049cd10f74a944c6d5e90d4639927f8620ae/alexnet_train_60_epochs_lr0.001-b4aa5238.pth.tar',
 }
 
-madry_model_folder = os.path.join(os.getenv("TORCH_HOME", "~/.cache/torch"), "checkpoints")
-vissl_model_folder = os.path.join(os.getenv("TORCH_HOME", "~/.cache/torch"), "checkpoints")
+madry_model_folder = os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "checkpoints")
+vissl_model_folder = os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "checkpoints")
 madry_models = ["imagenet_l2_3_0", "imagenet_linf_4", "imagenet_linf_8"]
 
 imagenet_norm_mean, imagenet_norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
@@ -220,9 +220,9 @@ def get_prototypes(model_, train_set, device, n_examples_per_class=5, n_classes=
     for proto_imgs in prototypes:
         imgs = torch.stack(proto_imgs, dim=0).to(device)
         feature = model_.encode_image(imgs)
+        feature /= feature.norm(dim=-1, keepdim=True)
         feat_mean = feature.mean(0)
         feat_var = feature.std(0)
-        feat_mean /= feat_mean.norm(dim=-1, keepdim=True)
         features.append(feat_mean)
         std.append(feat_var)
     return torch.stack(features, dim=0), torch.stack(std, dim=0), torch.ones(len(std)).fill_(n_examples_per_class)
@@ -259,6 +259,7 @@ def get_model(model_name, device):
         transform = imagenet_transform
     elif model_name == "virtex":
         model = ModelEncapsulation(torch.hub.load("kdexd/virtex", "resnet50", pretrained=True), 2048)
+        model.module.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
         model.to(device)
         transform = imagenet_transform
     elif "geirhos" in model_name and model_name.replace("geirhos-", "") in geirhos_model_urls.keys():
