@@ -7,7 +7,9 @@ import scipy
 import torch
 from scipy.spatial.distance import squareform
 
-from utils import get_prototypes, get_model, get_dataset, get_rdm
+from utils import get_prototypes, get_rdm
+from utils.datasets.datasets import get_dataset
+from utils.models import get_model
 
 
 def load_corr_results(results_path):

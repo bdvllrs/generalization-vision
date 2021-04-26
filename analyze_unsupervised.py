@@ -30,6 +30,8 @@ model_names_short = {
     "geirhos-resnet50_trained_on_SIN": "SIN",
     "geirhos-resnet50_trained_on_SIN_and_IN": "SIN+IN",
     "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": "SIN+IN-FIN",
+    "semi-supervised-YFCC100M": "YFCC100M",
+    "semi-weakly-supervised-instagram": "IG",
 }
 
 markers = {
@@ -37,6 +39,8 @@ markers = {
     # "GPT2_text": "GPT2",
     # "Word2Vec",
     "CLIP-RN50": ("xkcd:light blue", ""),
+    "semi-supervised-YFCC100M": ("xkcd:indigo", ""),
+    "semi-weakly-supervised-instagram": ("xkcd:dark blue", ""),
     # "CLIP-RN50_text": ("xkcd:indigo", "."),
     "virtex": ("xkcd:blue", ""),
     "RN50": ("xkcd:orange", ""),
@@ -49,9 +53,11 @@ markers = {
     "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": ("xkcd:forest green", ""),
 }
 
-model_order = ["CLIP-RN50", "virtex", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN", "geirhos-resnet50_trained_on_SIN_and_IN",
-               "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0", "madry-imagenet_linf_4",
-               "madry-imagenet_linf_8"]
+model_order = ["CLIP-RN50", "virtex", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
+               "geirhos-resnet50_trained_on_SIN_and_IN",
+               "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
+               "madry-imagenet_linf_4",
+               "madry-imagenet_linf_8", "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"]
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
 
@@ -60,29 +66,28 @@ dataset_name_plot = {
 }
 
 chance_levels = {
-    "HouseNumbers": 1/10,
-    "CUB": 1/200,
-    "CIFAR100": 1/100,
-    "MNIST": 1/10,
-    "FashionMNIST": 1/10,
-    "CIFAR10": 1/10,
+    "HouseNumbers": 1 / 10,
+    "CUB": 1 / 200,
+    "CIFAR100": 1 / 100,
+    "MNIST": 1 / 10,
+    "FashionMNIST": 1 / 10,
+    "CIFAR10": 1 / 10,
 }
 
 few_shot_indices = [1, 5, 10]
 
 if __name__ == '__main__':
-    n_cols =  1 + len(few_shot_indices)
+    n_cols = 1 + len(few_shot_indices)
     n_rows = 1
     figsize = 3
 
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     # result_id = 46
-    result_id = 182
+    result_id = 227
     idx_prototypes_bar_plot = 1
 
     accuracies, config = load_corr_results(Path(f"results/{result_id}"))
-
 
     n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
     ax = axes[-1]
@@ -102,7 +107,7 @@ if __name__ == '__main__':
         if model_name in model_names_short:
             color, hatch = markers[model_name]
             ax.bar([k * 0.35], np.mean(accuracies), 0.35, color=color, hatch=hatch,
-                    yerr=(np.std(accuracies) / np.sqrt(len(accuracies))), label=model_names_short[model_name])
+                   yerr=(np.std(accuracies) / np.sqrt(len(accuracies))), label=model_names_short[model_name])
     ax.axhline(np.mean(models['chance']), linestyle="--", color="black", label="Average chance level")
     ax.set_title("Clustering")
     # ax.set_ylabel("Accuracy")
@@ -113,9 +118,8 @@ if __name__ == '__main__':
 
     print(config)
 
-
     # result_id = 76
-    result_id = 168
+    result_id = 229
     idx_prototypes_bar_plot = 1
 
     accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
@@ -158,8 +162,8 @@ if __name__ == '__main__':
     plt.savefig(f"results/{result_id}/averaged_performances.svg", format="svg")
     plt.show()
 
-    # Dataset wise plots
-    # result_id = 46
+    # # Dataset wise plots
+    # result_id = 227
     # idx_prototypes_bar_plot = 1
     #
     # accuracies, config = load_corr_results(Path(f"results/{result_id}"))
@@ -185,8 +189,8 @@ if __name__ == '__main__':
     #
     #     ax.axhline(chance_levels[dataset_name], linestyle="--", color="black", label="Chance level")
     #
-    #     if dataset_name == "HouseNumbers":
-    #         ax.set_ylim(top=0.35)
+    #     # if dataset_name == "HouseNumbers":
+    #     #     ax.set_ylim(top=0.35)
     #
     #     if k == 0:
     #         ax.legend()

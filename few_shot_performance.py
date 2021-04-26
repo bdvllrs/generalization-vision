@@ -5,30 +5,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from utils import evaluate_dataset, get_prototypes, get_model, get_dataset, save_results, \
-    load_results
-from datasets import RandomizedDataset
+from utils.utils import evaluate_dataset, get_prototypes, save_results, load_results
+from utils.datasets.datasets import get_dataset
+from utils.models import get_model
+from utils.datasets import RandomizedDataset
 
 if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    load_results_id = 76
+    load_results_id = 224
 
     # Models to test
     model_names = [
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
-        # "geirhos-resnet50_trained_on_SIN",
-        # "geirhos-resnet50_trained_on_SIN_and_IN",
-        # "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        # "madry-imagenet_l2_3_0",
-        # "madry-imagenet_linf_4",
-        # "madry-imagenet_linf_8",
-        # "CLIP-ViT-B/32",
-        # "CLIP-RN50",
+        "semi-supervised-YFCC100M",
+        "semi-weakly-supervised-instagram",
+        "geirhos-resnet50_trained_on_SIN",
+        "geirhos-resnet50_trained_on_SIN_and_IN",
+        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        "madry-imagenet_l2_3_0",
+        "madry-imagenet_linf_4",
+        "madry-imagenet_linf_8",
+        "CLIP-ViT-B/32",
+        "CLIP-RN50",
         "virtex",
-        # "RN50",
-        # "BiT-M-R50x1",
+        "RN50",
+        "BiT-M-R50x1",
     ]
     # Dataset to test on
     datasets = [
@@ -40,7 +41,7 @@ if __name__ == '__main__':
         {"name": "FashionMNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
     ]
     # Number of prototypes per class and number of trials for each number of prototype
-    prototypes_trials = {n_proto: 3 for n_proto in [-1]}
+    prototypes_trials = {n_proto: 10 for n_proto in [1, 5, 10]}
 
     plot_images = False
 
@@ -67,9 +68,9 @@ if __name__ == '__main__':
         confusion_matrices = dict()
 
     items_to_remove = [
-        "virtex",
-        "RN50",
-        "madry-imagenet_l2_3_0",
+        # "virtex",
+        # "RN50",
+        # "madry-imagenet_l2_3_0",
     ]
     for item in items_to_remove:
         del accuracies[item]
@@ -84,6 +85,7 @@ if __name__ == '__main__':
                     confusion_matrices[model_name] = dict()
                 # Import model
                 model, transform = get_model(model_name, device)
+                model.eval()
 
                 for dataset in datasets:
                     if dataset['name'] not in accuracies[model_name]:

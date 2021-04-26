@@ -5,9 +5,10 @@ import numpy as np
 import torch
 from transformers import pipeline
 
-from svcca import cca_core, pwcca
-from utils import get_model, get_dataset, get_set_features, language_model_features, cca_plot_helper
-from datasets import RandomizedDataset
+from svcca import cca_core
+from utils import get_set_features, language_model_features, cca_plot_helper
+from utils.datasets.datasets import get_dataset
+from utils.models import get_model
 
 if __name__ == '__main__':
     device = "cuda:2" if torch.cuda.is_available() else "cpu"

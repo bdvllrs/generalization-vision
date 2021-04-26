@@ -1,4 +1,3 @@
-import os
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -8,10 +7,10 @@ from nltk.corpus import wordnet as wn
 from sklearn.decomposition import PCA
 import numpy as np
 
-from datasets import RandomizedDataset
 from skip_gram_model import SkipGramModel
-from utils import get_model, get_set_features, get_prototypes
-from wiki_data_utils import DataReader, Word2vecDataset
+from utils import get_prototypes
+from utils.models import get_model
+from wiki_data_utils import Word2vecDataset
 
 class FrozenEmbeddings:
     def __init__(self, model, transform, imagenet_path, device, batch_size=32):
@@ -115,6 +114,7 @@ class Word2VecTrainer:
             optimizer = optim.SparseAdam(params, lr=self.initial_lr)
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
 
+            train_items = 0.8 * len(self.dataloader)
             running_loss = 0.0
             val_loss = []
             self.skip_gram_model.train()
@@ -125,7 +125,7 @@ class Word2VecTrainer:
                     neg_v = sample_batched[2].to(self.device)
 
                     # train
-                    if i < 0.8 * self.data.sentences_count:
+                    if i < train_items:
                         scheduler.step()
                         optimizer.zero_grad()
                         loss = self.skip_gram_model(pos_u, pos_v, neg_v)
@@ -138,7 +138,10 @@ class Word2VecTrainer:
                             print(" Loss: " + str(running_loss))
                     # test
                     else:
-                        self.skip_gram_model.eval()
+                        if i == train_items:
+                            self.skip_gram_model.eval()
+                            print("EVAL")
+
                         with torch.no_grad():
                             loss = self.skip_gram_model(pos_u, pos_v, neg_v)
                             val_loss.append(loss.item())
@@ -155,7 +158,7 @@ class Word2VecTrainer:
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda:2')
+    device = torch.device('cuda')
     model_names = [
         "BERT",
         "RN50",

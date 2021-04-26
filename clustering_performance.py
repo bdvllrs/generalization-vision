@@ -6,7 +6,9 @@ import numpy as np
 import torch
 from sklearn.cluster import AgglomerativeClustering
 
-from utils import get_model, get_dataset, get_set_features
+from utils import get_set_features
+from utils.datasets.datasets import get_dataset
+from utils.models import get_model
 
 
 def load_corr_results(results_path):
@@ -48,22 +50,22 @@ def permute_labels(target, prediction, num_labels):
 if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    load_results_id = 46
+    load_results_id = None
 
     # Models to test
     model_names = [
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
-        # "madry-imagenet_l2_3_0",
-        # "madry-imagenet_linf_4",
-        # "madry-imagenet_linf_8",
-        # "geirhos-resnet50_trained_on_SIN",
-        # "geirhos-resnet50_trained_on_SIN_and_IN",
-        # "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        "RN50",
+        "CLIP-RN50",
+        "BiT-M-R50x1",
         "virtex",
-        # "CLIP-RN50",
-        # "RN50",
-        # "BiT-M-R50x1",
+        "madry-imagenet_l2_3_0",
+        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+        "semi-supervised-YFCC100M",
+        "semi-weakly-supervised-instagram",
+        "madry-imagenet_linf_4",
+        "madry-imagenet_linf_8",
+        "geirhos-resnet50_trained_on_SIN",
+        "geirhos-resnet50_trained_on_SIN_and_IN",
     ]
     # Dataset to test on
     datasets = [
@@ -97,7 +99,6 @@ if __name__ == '__main__':
         acc = dict()
 
     items_to_remove = [
-        "virtex",
     ]
     for item in items_to_remove:
         del acc[item]
@@ -107,6 +108,7 @@ if __name__ == '__main__':
             for model_name in model_names:
                 # Import model
                 model, transform = get_model(model_name, device)
+                model.eval()
 
                 if model_name not in acc:
                     acc[model_name] = {}

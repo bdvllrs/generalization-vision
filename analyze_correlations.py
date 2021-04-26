@@ -26,7 +26,7 @@ class PlotMarker:
 
 
 if __name__ == '__main__':
-    result_id = 28
+    result_id = 228
     idx_prototypes_bar_plot = 1
     dataset = "ImageNet"
 

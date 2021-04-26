@@ -44,6 +44,8 @@ color_scheme = {
     "geirhos-resnet50_trained_on_SIN": "xkcd:green",
     "geirhos-resnet50_trained_on_SIN_and_IN": "xkcd:green",
     "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": "xkcd:green",
+    "semi-supervised-YFCC100M": "xkcd:indigo",
+    "semi-weakly-supervised-instagram": "xkcd:dark blue",
 }
 
 
@@ -102,7 +104,7 @@ def plot_dendrogram(model, **kwargs):
     dendrogram(linkage_matrix, **kwargs)
 
 if __name__ == '__main__':
-    result_id = 174
+    result_id = 230
     idx_prototypes_bar_plot = 1
 
     dataset = "ImageNet"

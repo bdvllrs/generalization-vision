@@ -9,7 +9,9 @@ import umap
 from scipy.spatial.distance import squareform
 from sklearn.manifold import TSNE
 
-from utils import get_prototypes, get_model, get_dataset, get_rdm
+from utils import get_prototypes, get_rdm
+from utils.datasets.datasets import get_dataset
+from utils.models import get_model
 
 
 def load_corr_results(results_path):
@@ -41,12 +43,12 @@ def save_corr_results(results_path, corr, significance, feature_cache, dim_reduc
 if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    load_results_id = 173
+    load_results_id = None
 
     # Models to test
     model_names = [
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
+        "semi-supervised-YFCC100M",
+        "semi-weakly-supervised-instagram",
         "madry-imagenet_l2_3_0",
         "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
@@ -118,6 +120,7 @@ if __name__ == '__main__':
             for model_name in model_names:
                 # Import model
                 model, transform = get_model(model_name, device)
+                model.eval()
 
                 for dataset in datasets:
                     # Get dataset

@@ -8,8 +8,10 @@ from scipy.spatial.distance import squareform
 from transformers import AutoTokenizer, AutoModelWithLMHead
 
 from clip import tokenize
-from utils import get_prototypes, get_model, get_dataset, language_model_features, save_corr_results, load_corr_results, \
+from utils import get_prototypes, language_model_features, save_corr_results, load_corr_results, \
     get_rdm, project_rdms
+from utils.datasets.datasets import get_dataset
+from utils.models import get_model
 
 if __name__ == '__main__':
     device = "cuda:2" if torch.cuda.is_available() else "cpu"
