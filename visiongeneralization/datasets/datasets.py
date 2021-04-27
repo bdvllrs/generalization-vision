@@ -6,6 +6,7 @@ import torch
 import torchvision
 import torchvision.datasets
 from PIL import Image as Image
+from natsort import natsorted
 from scipy.io import loadmat
 from torchvision import transforms as transforms
 from torchvision.datasets import MNIST, FashionMNIST, CIFAR10, CIFAR100, ImageNet
@@ -314,6 +315,81 @@ class StanfordCars:
         return sample, target
 
 
+class ImageNetVal150(torchvision.datasets.ImageFolder):
+    """
+        The class provides a Dataset method to get all the images in the 'main_dir' without their targets
+    """
+    cls2idx = {'tomato': 142, 'watermelon': 144, 'yarmulke, yarmulka, yarmelke': 141, 'lawn mower, mower': 88,
+               'menorah': 92, 'tricycle, trike, velocipede': 136, 'camera tripod': 51, 'elephant': 37,
+               'fire engine, fire truck': 64,
+               'centipede': 9, 'pitcher, ewer': 102, 'baseball bat, lumber': 42, 'gorilla, Gorilla gorilla': 35,
+               'speedboat': 121, 'toaster': 133,
+               'shirt': 115, 'light bulb, lightbulb, bulb, incandescent lamp, electric light, electric-light bulb': 89,
+               'soda can': 119,
+               'lathe': 87, 'pool table, billiard table, snooker table': 103, 'trilobite': 6,
+               'basket, basketball hoop, hoop': 44, 'cereal box': 53,
+               'penguin': 19, 'spoon': 122, 'backpack, back pack, knapsack, packsack, rucksack, haversack': 41,
+               'screwdriver': 112, 'tennis ball': 129,
+               'horse, Equus caballus': 29, 'ghetto blaster, boom box': 70, 'dolphin': 20, 'snail': 14,
+               'flashlight, torch': 65,
+               'airship, dirigible': 39, 'porcupine, hedgehog': 28, 'birdbath': 48, 'triceratops': 4, 'hourglass': 80,
+               'tepee, tipi, teepee': 131,
+               'telephone booth, phone booth, call box, telephone box, telephone kiosk': 128,
+               'stirrup, stirrup iron': 124,
+               'refrigerator, icebox': 106, 'school bus': 111, 'gym shoe, sneaker, tennis shoe': 73,
+               'horseshoe crab, king crab, Limulus polyphemus, Xiphosurus polyphemus': 10,
+               'computer monitor': 58, 'soccer ball': 118, 'diskette, floppy, floppy disk': 60,
+               'marimba, xylophone': 90,
+               'paper clip, paperclip, gem clip': 99, 'skateboard': 116, 'true toad': 2,
+               'chimpanzee, chimp, Pan troglodytes': 36,
+               'microscope': 93, 'bonsai': 149, 'helicopter, chopper, whirlybird, eggbeater': 77,
+               'harmonica, mouth organ, harp, mouth harp': 75,
+               'car wheel': 52, 'common raccoon, common racoon, coon, ringtail, Procyon lotor': 38,
+               'giraffe, camelopard, Giraffa camelopardalis': 32,
+               'sunflower, helianthus': 146, 'necktie, tie': 97, 'laptop, laptop computer': 86, 'goose': 12,
+               'harpsichord, cembalo': 76, 'joystick': 81,
+               'miniature fan palm, bamboo palm, fern rhapis, Rhapis excelsa': 148, 'watch, ticker': 138,
+               'personal digital assistant, PDA, personal organizer, personal organiser, organizer, organiser': 100,
+               'snake, serpent, ophidian': 5,
+               'bathtub, bathing tub, bath, tub': 45, 'grape': 145, 'scorpion': 7, 'ketch': 84,
+               'spectacles, specs, eyeglasses, glasses': 120, 'zebra': 30,
+               'dog, domestic dog, Canis familiaris': 21, 'steering wheel, wheel': 123, 'hummingbird': 11,
+               'skunk, polecat, wood pussy': 33, 'obelisk': 98,
+               'revolver, six-gun, six-shooter': 107, 'syringe': 126, 'tennis racket, tennis racquet': 130,
+               'bowling pin, pin': 49, 'French horn, horn': 66,
+               'kayak': 83, 'boxing glove, glove': 50, 'palm, palm tree': 147, 'windmill': 139,
+               'frog, toad, toad frog, anuran, batrachian, salientian': 1, 'golf ball': 71,
+               'Frisbee': 67, 'treadmill': 135, 'coffee mug': 55, 'fighter, fighter aircraft, attack aircraft': 63,
+               'Segway, Segway Human Transporter, Segway HT': 113,
+               'grasshopper, hopper': 24, 'knife': 85, 'kangaroo': 13, 'dumbbell': 61, 'ostrich, Struthio camelus': 0,
+               'beacon, lighthouse, beacon light, pharos': 46,
+               'theodolite, transit': 132, 'cormorant, Phalacrocorax carbo': 18, 'bear': 23, 'skyscraper': 117,
+               'radio telescope, radio reflector': 105, 'octopus, devilfish': 16,
+               'greyhound': 22, 'elk, European elk, moose, Alces alces': 31, 'projector': 104,
+               'sword, blade, brand, steel': 125, 'hot-air balloon': 78, 'wine bottle': 140,
+               'computer keyboard, keypad': 57,
+               'baby buggy, baby carriage, carriage, perambulator, pram, stroller, go-cart, pushchair, pusher': 40,
+               'clasp knife, jackknife': 54, 'mountain bike, all-terrain bike, off-roader': 95, 'tuning fork': 137,
+               'hot tub': 79, 'Kalashnikov': 82, 'spider': 8,
+               'ibis': 17, 'earphone, earpiece, headphone, phone': 62, 'hand calculator, pocket calculator': 74,
+               'megaphone': 91, 'mushroom': 143, 'mouse, computer mouse': 96,
+               'rifle': 108, 'photocopier': 101, 'homo, man, human being, human': 34, 'motorcycle, bike': 94,
+               'compact disk, compact disc, CD': 56,
+               'baseball glove, glove, baseball mitt, mitt': 43, 'praying mantis, praying mantid, Mantis religioso': 26,
+               'cockroach, roach': 25, 'starfish, sea star': 27,
+               'mussel': 15, 'roulette wheel, wheel': 109, 'sextant': 114,
+               'binoculars, field glasses, opera glasses': 47, 'toaster oven': 134, 'guitar pick': 72,
+               'hawksbill turtle, hawksbill, hawkbill, tortoiseshell turtle, Eretmochelys imbricata': 3,
+               'dial telephone, dial phone': 59, 'teapot': 127,
+               'gas pump, gasoline pump, petrol pump, island dispenser': 69, 'saddle': 110,
+               'frying pan, frypan, skillet': 68}
+
+    def __init__(self, image_dir, transform):
+        self.image_dir = image_dir
+        self.transform = transform
+        super(ImageNetVal150, self).__init__(str(self.image_dir), transform)
+
+
 def get_dataset(dataset, transform, data_augment=False):
     train_transform = transform
     test_transform = transform
@@ -353,6 +429,10 @@ def get_dataset(dataset, transform, data_augment=False):
         dataset_test = ImageNet(root=dataset["root_dir"], split='val', transform=test_transform)
         class_names = [f"a {class_name}" for class_name in
                        map(lambda x: ', '.join(x[:2]).lower(), dataset_test.classes)]
+    elif dataset['name'] == "ImageNetVal150":
+        dataset_train = None
+        dataset_test = ImageNetVal150(dataset["root_dir"], test_transform)
+        class_names = [f"a {class_name}" for class_name in dataset_test.classes]
     elif dataset['name'] == "CUB":
         dataset_train = CUBDataset(dataset["root_dir"], train=True,
                                    transform=train_transform)
@@ -378,7 +458,8 @@ def get_dataset(dataset, transform, data_augment=False):
         caltech_train = torchvision.datasets.ImageFolder(dataset['root_dir'], train_transform)
         caltech_test = torchvision.datasets.ImageFolder(dataset['root_dir'], test_transform)
         NUM_TRAINING_SAMPLES_PER_CLASS = 30 if dataset['name'] == "Caltech101" else 60
-        class_start_idx = [0] + [i for i in np.arange(1, len(caltech_train)) if caltech_train.targets[i] == caltech_train.targets[i - 1] + 1]
+        class_start_idx = [0] + [i for i in np.arange(1, len(caltech_train)) if
+                                 caltech_train.targets[i] == caltech_train.targets[i - 1] + 1]
         train_indices = sum([np.arange(start_idx, start_idx + NUM_TRAINING_SAMPLES_PER_CLASS).tolist() for start_idx in
                              class_start_idx], [])
         test_indices = list((set(np.arange(1, len(caltech_train))) - set(train_indices)))

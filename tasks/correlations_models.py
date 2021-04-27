@@ -107,8 +107,10 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
-        "semi-supervised-YFCC100M",
-        "semi-weakly-supervised-instagram",
+        "RN50",
+        "virtex",
+        "BiT-M-R50x1",
+        "CLIP-RN50",
         "madry-imagenet_l2_3_0",
         "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
@@ -118,14 +120,13 @@ if __name__ == '__main__':
         "BERT",
         "GPT2",
         # "Word2Vec",
-        "CLIP-RN50",
-        "RN50",
-        "virtex",
-        "BiT-M-R50x1",
+        # "semi-supervised-YFCC100M",
+        # "semi-weakly-supervised-instagram",
     ]
     # Dataset to test on
     datasets = [
-        {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
+        {"name": "ImageNetVal150", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/StandardInceptionDB/val"},
+        # {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
     ]
 
     config = {

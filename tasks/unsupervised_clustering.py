@@ -68,7 +68,10 @@ def main(config, acc):
                                                                        affinity="correlation",
                                                                        linkage="average")
                         predicted_labels = clustering_algorithm.fit_predict(all_features)
-                        label2color = ["xkcd:light blue", "xkcd:dark blue", "xkcd:indigo", "black","xkcd:orange", "xkcd:puce", "xkcd:light red", "xkcd:dark red", "xkcd:dark green", "xkcd:light green"]
+                        # plot pca of the features
+                        label2color = ["xkcd:light blue", "xkcd:dark blue", "xkcd:indigo", "black","xkcd:orange",
+                                       "xkcd:puce", "xkcd:light red", "xkcd:dark red",
+                                       "xkcd:dark green", "xkcd:light green"]
                         colors = [label2color[c] for c in predicted_labels]
                         pca = PCA(n_components=2)
                         X_pca = pca.fit_transform(all_features)
@@ -115,13 +118,13 @@ if __name__ == '__main__':
     ]
     # Dataset to test on
     datasets = [
-        # {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/imagenet")},
+        # {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
         {"name": "MNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": "/mnt/HD1/datasets/StreetViewHouseNumbers/format2"},
-        {"name": "CUB", "batch_size": args.batch_size, "root_dir": "/mnt/HD1/datasets/CUB/CUB_200_2011"},
+        {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/StreetViewHouseNumbers/format2"},
+        {"name": "CUB", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/CUB/CUB_200_2011"},
     ]
 
     config = {
