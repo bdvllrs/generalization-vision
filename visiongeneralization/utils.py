@@ -84,7 +84,7 @@ def evaluate_dataset(model_, dataset, text_inputs, labels, device, batch_size=64
             confusion_matrix_(targets.cpu(), predictions.cpu(), labels=labels))
 
 
-def get_set_features(model_, dataset, device, batch_size=64):
+def get_set_features(model_, dataset, device, batch_size=64, normalize_feature=True):
     """
     Returns all features and labels of a dataset for a given model.
     Args:
@@ -92,6 +92,7 @@ def get_set_features(model_, dataset, device, batch_size=64):
         dataset:
         device:
         batch_size:
+        normalize_feature: whether to normalize the feature vectors
 
     Returns: Couple (features, labels) where
         features: (N_IMAGES, DIM_FEAT) where N_IMAGES is the number of images in the dataset
@@ -109,7 +110,8 @@ def get_set_features(model_, dataset, device, batch_size=64):
         # Get feature from image
         feature = model_.encode_image(image_input.to(device))
         # normalize by the norm of the vector to compute the dot product later on.
-        feature /= feature.norm(dim=-1, keepdim=True)
+        if normalize_feature:
+            feature /= feature.norm(dim=-1, keepdim=True)
         features.append(feature.detach().cpu().numpy())
         labels.extend(target.tolist())
     return np.concatenate(features, axis=0), np.array(labels)
