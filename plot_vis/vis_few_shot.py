@@ -2,77 +2,10 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+from utils import dataset_names_short, model_names_short, markers, chance_levels
 from visiongeneralization.utils import load_results
 
-
-class PlotMarker:
-    def __init__(self, n_markers=10):
-        self.markers = ["o", "x", ".", "v", "^", "*", "D", "+"]
-        # self.colors = ["amber", "brown", "cobalt", "red", "teal", "magenta", "lime", "indigo", "emerald", "mauve", "olive", "orange", "pink"]
-        self.colors = ["b", "g", "r", "c", "m", "y", "k"]
-
-        self.possible_markers = [f"{self.markers[k % len(self.markers)]}-{self.colors[k % len(self.colors)]}"
-                                 for k in range(n_markers)]
-
-        self.marker_count = 0
-
-    def reset(self):
-        self.marker_count = 0
-
-    def get_marker(self):
-        marker = self.possible_markers[self.marker_count]
-        self.marker_count = (self.marker_count + 1) % len(self.possible_markers)
-        return marker
-
-
-model_names_short = {
-    "BERT_text": "BERT",
-    "GPT2_text": "GPT2",
-    # "Word2Vec",
-    "CLIP-RN50": "CLIP",
-    "CLIP-RN50_text": "CLIP-T",
-    "RN50": "RN50",
-    "virtex": "VirTex",
-    "BiT-M-R50x1": "BiT-M",
-    "madry-imagenet_l2_3_0": "AR-L2",
-    "madry-imagenet_linf_4": "AR-LI4",
-    "madry-imagenet_linf_8": "AR-LI8",
-    "geirhos-resnet50_trained_on_SIN": "SIN",
-    "geirhos-resnet50_trained_on_SIN_and_IN": "SIN+IN",
-    "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": "SIN+IN-FIN",
-}
-
-markers = {
-    # "BERT_text": "BERT",
-    # "GPT2_text": "GPT2",
-    # "Word2Vec",
-    "CLIP-RN50": ("xkcd:blue", "-"),
-    # "CLIP-RN50_text": ("xkcd:indigo", "."),
-    "virtex": ("xkcd:blue", "--"),
-    "RN50": ("xkcd:orange", "-"),
-    "BiT-M-R50x1": ("xkcd:puce", "-"),
-    "madry-imagenet_l2_3_0": ("xkcd:red", "-"),
-    "madry-imagenet_linf_4": ("xkcd:red", "--"),
-    "madry-imagenet_linf_8": ("xkcd:red", ":"),
-    "geirhos-resnet50_trained_on_SIN": ("xkcd:green", "-"),
-    "geirhos-resnet50_trained_on_SIN_and_IN": ("xkcd:green", "--"),
-    "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": ("xkcd:green", ":"),
-}
-
-dataset_name_plot = {
-    "HouseNumbers": "SVHN"
-}
-
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
-
-chance_levels = {
-    "HouseNumbers": 1/10,
-    "CUB": 1/200,
-    "CIFAR100": 1/100,
-    "MNIST": 1/10,
-    "FashionMNIST": 1/10,
-    "CIFAR10": 1/10,
-}
 
 if __name__ == '__main__':
     # result_id = 76
@@ -81,7 +14,8 @@ if __name__ == '__main__':
     result_id = 229
     idx_prototypes_bar_plot = 1
 
-    accuracies, confusion_matrices, config = load_results(Path(f"../results/{result_id}"))
+    results_data, config = load_results(Path(f"../results/{result_id}"))
+    accuracies = results_data["accuracies"]
 
     datasets = {dataset['name']: dataset for dataset in config['datasets']}
 
@@ -110,8 +44,8 @@ if __name__ == '__main__':
             ax.legend()
         ax.set_xticks(x)
         ax.set_xlabel(x)
-        if dataset['name'] in dataset_name_plot.keys():
-            ax.set_title(dataset_name_plot[dataset['name']])
+        if dataset['name'] in dataset_names_short.keys():
+            ax.set_title(dataset_names_short[dataset['name']])
         else:
             ax.set_title(dataset['name'])
         if k == 0:
