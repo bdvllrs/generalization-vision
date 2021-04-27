@@ -8,8 +8,8 @@ from torch.utils import model_zoo
 from torchvision import transforms as transforms
 from transformers import AutoModelWithLMHead, AutoTokenizer, pipeline
 
-import clip
-from bit_model import KNOWN_MODELS as BiT_MODELS
+import visiongeneralization.clip as clip
+from .bit_model import KNOWN_MODELS as BiT_MODELS
 
 
 class ModelEncapsulation(torch.nn.Module):

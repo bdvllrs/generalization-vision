@@ -5,11 +5,10 @@ from pathlib import Path
 import numpy as np
 import scipy
 import torch
-from scipy.spatial.distance import squareform
 
-from utils import get_prototypes, get_rdm
-from utils.datasets.datasets import get_dataset
-from utils.models import get_model
+from visiongeneralization import get_prototypes, get_rdm
+from visiongeneralization import get_dataset
+from visiongeneralization import get_model
 
 
 def load_corr_results(results_path):

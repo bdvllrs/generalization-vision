@@ -8,8 +8,8 @@ from sklearn.decomposition import PCA
 import numpy as np
 
 from skip_gram_model import SkipGramModel
-from utils import get_prototypes
-from utils.models import get_model
+from visiongeneralization import get_prototypes
+from visiongeneralization import get_model
 from wiki_data_utils import Word2vecDataset
 
 class FrozenEmbeddings:

@@ -4,7 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils import load_results
+from visiongeneralization.utils import load_results
 
 
 def load_corr_results(results_path):
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     result_id = 227
     idx_prototypes_bar_plot = 1
 
-    accuracies, config = load_corr_results(Path(f"results/{result_id}"))
+    accuracies, config = load_corr_results(Path(f"../results/{result_id}"))
 
     n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
     ax = axes[-1]
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     plt.savefig(f"results/{result_id}/averaged_performances.svg", format="svg")
     plt.show()
 
-    # # Dataset wise plots
+    # # Dataset wise plot_vis
     # result_id = 227
     # idx_prototypes_bar_plot = 1
     #

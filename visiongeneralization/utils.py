@@ -9,7 +9,6 @@ from torch.utils import model_zoo
 from tqdm import tqdm
 
 
-
 def plot_class_predictions(images, class_names, probs,
                            square_size=4, show_best_n_classes=5):
     """
@@ -135,8 +134,10 @@ def get_prototypes(model_, train_set, device, n_examples_per_class=5, n_classes=
         std.append(feat_var)
     return torch.stack(features, dim=0), torch.stack(std, dim=0), torch.ones(len(std)).fill_(n_examples_per_class)
 
+
 def t_test(x, y, x_std, y_std, count_x, count_y):
     return (x - y) / np.sqrt(np.square(x_std) / count_x + np.square(y_std) / count_y)
+
 
 def get_rdm(features, feature_std=None, feature_counts=None):
     features = features.cpu().numpy()
@@ -194,46 +195,19 @@ def project_rdms(rdm_resnet, rdm_bert, rdm_model):
     return score
 
 
-def old_save_results(results_path, accuracies, confusion_matrices, config):
-    print(f"Saving results in {str(results_path)}...")
-    results_path.mkdir(exist_ok=True)
-    np.save(str(results_path / "accuracies.npy"), accuracies)
-    np.save(str(results_path / "confusion_matrices.npy"), confusion_matrices)
-    with open(str(results_path / "config.json"), "w") as config_file:
-        json.dump(config, config_file, indent=4)
-
-
-def save_corr_results(results_path, bert_corr, resnet_corr, resnet_bert_score, config):
-    print(f"Saving results in {str(results_path)}...")
-    results_path.mkdir()
-    np.save(str(results_path / "bert_corr.npy"), bert_corr)
-    np.save(str(results_path / "resnet_corr.npy"), resnet_corr)
-    np.save(str(results_path / "resnet_bert_score.npy"), resnet_bert_score)
-    with open(str(results_path / "config.json"), "w") as config_file:
-        json.dump(config, config_file, indent=4)
-
-
-def old_load_results(results_path):
+def load_results(results_path: Path):
     with open(results_path / "config.json", "r") as f:
         config = json.load(f)
 
-    accuracies = np.load(results_path / "accuracies.npy", allow_pickle=True).item()
-    confusion_matrices = np.load(results_path / "confusion_matrices.npy", allow_pickle=True).item()
-    return accuracies, confusion_matrices, config
+    params = {}
+    for file in results_path.iterdir():
+        if file.suffix == ".npy":
+            params[file.stem] = np.load(str(file), allow_pickle=True).item()
+    return config, params
 
-def load_results(results_path):
-    with open(results_path / "config.json", "r") as f:
-        config = json.load(f)
-
-    for file in results_path.iter():
-        if file.name().split(".") == "npy":
-            print('ok')
-    # accuracies = np.load(results_path / "accuracies.npy", allow_pickle=True).item()
-    # confusion_matrices = np.load(results_path / "confusion_matrices.npy", allow_pickle=True).item()
-    # return accuracies, confusion_matrices, config
-    return config, {}
 
 def save_results(results_path, config, **params):
+    results_path = Path(results_path)
     print(f"Saving results in {str(results_path)}...")
     results_path.mkdir(exist_ok=True)
     for name, val in params.items():
@@ -241,24 +215,36 @@ def save_results(results_path, config, **params):
     with open(str(results_path / "config.json"), "w") as config_file:
         json.dump(config, config_file, indent=4)
 
-def load_corr_results(results_path):
-    with open(results_path / "config.json", "r") as f:
-        config = json.load(f)
 
-    bert_corr = np.load(results_path / "bert_corr.npy", allow_pickle=True).item()
-    resnet_corr = np.load(results_path / "resnet_corr.npy", allow_pickle=True).item()
-    resnet_bert_score = np.load(results_path / "resnet_bert_score.npy", allow_pickle=True).item()
-    return bert_corr, resnet_corr, resnet_bert_score, config
+def run(fun, config: dict, load_saved_results: int = None, **params):
+    """
+    Run the task
+    Args:
+        fun: main function to execute. Takes parameters: config, **params
+        config: config dict. Saved in checkpoints.
+        load_saved_results: An id of previous experiment to load the config and **params from.
+            the *new* config overrides the old one; the *old* **params overrides the new ones.
+        **params: additional parameters to save.
+    """
 
+    # Make directories to save checkpoints.
+    results_path = Path("../results")
+    results_path.mkdir(exist_ok=True)
 
-def run(fun, config, results_path, load_saved_results=False, **params):
-    if load_saved_results:
-        config, loaded_results = load_results(results_path)
+    # compute new id of the experiment
+    existing_folders = [int(f.name) for f in results_path.glob("*") if f.is_dir() and f.name.isdigit()]
+    result_idx = max(existing_folders) + 1 if len(existing_folders) else 0
+
+    results_path = results_path / str(result_idx)
+    results_path.mkdir()
+
+    # load the config and params if id is provided.
+    loaded_config = config
+    if load_saved_results is not None:
+        loaded_config, loaded_results = load_results(Path(f"results/{load_saved_results}"))
         params.update(loaded_results)
-    try:
-        fun()
-        save_results(results_path, config, **params)
-    except BaseException as e:
-        print("Something happened... Saving results so far.")
-        save_results(results_path, config, **params)
-        raise e
+        loaded_config.update(config)
+
+    loaded_config["results_path"] = str(results_path)
+    # run main
+    fun(loaded_config, **params)

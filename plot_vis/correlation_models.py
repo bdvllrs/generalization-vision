@@ -1,14 +1,11 @@
 import json
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sn
-import matplotlib.pyplot as plt
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
-from scipy.stats import pearsonr
 from scipy.cluster.hierarchy import dendrogram
-import umap
+from sklearn.cluster import AgglomerativeClustering
 
 model_names_short = {
     "BERT_text": "BERT",
@@ -82,6 +79,7 @@ def load_corr_results(results_path):
         dim_reducted_features = np.load(results_path / "dim_reducted_features.npy", allow_pickle=True).item()
     return corr, significance, feature_cache, dim_reducted_features, config
 
+
 def plot_dendrogram(model, **kwargs):
     # Create linkage matrix and then plot the dendrogram
 
@@ -103,6 +101,7 @@ def plot_dendrogram(model, **kwargs):
     # Plot the corresponding dendrogram
     dendrogram(linkage_matrix, **kwargs)
 
+
 if __name__ == '__main__':
     result_id = 230
     idx_prototypes_bar_plot = 1
@@ -112,7 +111,6 @@ if __name__ == '__main__':
     figsize = 5
 
     correlations, significance, features, dim_reduced_features, config = load_corr_results(Path(f"results/{result_id}"))
-
 
     # # UMAP
     # reducer = umap.UMAP(n_components=2, min_dist=0.05, n_neighbors=5, metric="correlation")
@@ -136,7 +134,7 @@ if __name__ == '__main__':
     y_short = [model_names_short[name] for name in dim_reduced_features['labels']]
     colors = [color_scheme[name] for name in dim_reduced_features['labels']]
 
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(1.5*figsize, 0.8*figsize))
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(1.5 * figsize, 0.8 * figsize))
     # ax = fig.add_subplot(111, projection='3d')
     ax = axes[1]
     ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=colors)
@@ -147,7 +145,6 @@ if __name__ == '__main__':
     ax.set_aspect((x1 - x0) / (y1 - y0))
     ax.set_title("(b)")
     # plt.title("t-SNE of RDMs")
-
 
     y, X = zip(*features.items())
     y_short = [model_names_short[name] for name in y]
@@ -209,4 +206,3 @@ if __name__ == '__main__':
     # plt.tight_layout(.5)
     # plt.savefig(f"results/{result_id}/plot_pval.eps", format="eps")
     # plt.show()
-

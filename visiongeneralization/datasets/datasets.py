@@ -5,12 +5,12 @@ import numpy as np
 import torch
 import torchvision
 import torchvision.datasets
-from PIL import Image, Image as Image
+from PIL import Image as Image
 from scipy.io import loadmat
 from torchvision import transforms as transforms
 from torchvision.datasets import MNIST, FashionMNIST, CIFAR10, CIFAR100, ImageNet
 
-from utils.datasets import FGVCAircraft
+from visiongeneralization.datasets.aircraft import FGVCAircraft
 
 Image.LOAD_TRUNCATED_IMAGES = True
 

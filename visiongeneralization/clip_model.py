@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torchvision import models
-from transformers import AutoModel, AutoTokenizer, BertTokenizer
+from transformers import AutoModel, AutoTokenizer
 
 
 class Bottleneck(nn.Module):
@@ -221,7 +221,9 @@ class VisualTransformer(nn.Module):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
-        x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
+        x = torch.cat(
+            [self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device),
+             x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
         x = self.ln_pre(x)
 
@@ -367,12 +369,14 @@ def build_model(state_dict: dict):
 
     if vit:
         vision_width = state_dict["visual.conv1.weight"].shape[0]
-        vision_layers = len([k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
+        vision_layers = len(
+            [k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
         vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
         grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
         image_resolution = vision_patch_size * grid_size
     else:
-        counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in [1, 2, 3, 4]]
+        counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in
+                        [1, 2, 3, 4]]
         vision_layers = tuple(counts)
         vision_width = state_dict["visual.layer1.0.conv1.weight"].shape[0]
         output_width = round((state_dict["visual.attnpool.positional_embedding"].shape[0] - 1) ** 0.5)
@@ -402,7 +406,7 @@ def build_model(state_dict: dict):
 
 
 class Projection(nn.Module):
-    def __init__(self, d_in: int, d_out: int, p: float=0.5) -> None:
+    def __init__(self, d_in: int, d_out: int, p: float = 0.5) -> None:
         super().__init__()
         self.linear1 = nn.Linear(d_in, d_out, bias=False)
         self.linear2 = nn.Linear(d_out, d_out, bias=False)
@@ -414,6 +418,7 @@ class Projection(nn.Module):
         embed2 = self.drop(self.linear2(F.gelu(embed1)))
         embeds = self.layer_norm(embed1 + embed2)
         return embeds
+
 
 class VisionEncoder(nn.Module):
     def __init__(self, d_out: int) -> None:
@@ -431,6 +436,7 @@ class VisionEncoder(nn.Module):
         projection_len = torch.norm(projected_vec, dim=-1, keepdim=True)
         return projected_vec / projection_len
 
+
 class TextEncoder(nn.Module):
     def __init__(self, d_out: int, transformer_embed_dim, text_model="distilbert-base-multilingual-cased") -> None:
         super().__init__()
@@ -446,6 +452,7 @@ class TextEncoder(nn.Module):
         projection_len = torch.norm(projected_vec, dim=-1, keepdim=True)
         return projected_vec / projection_len
 
+
 class Tokenizer:
     def __init__(self, tokenizer, max_length=128):
         self.tokenizer = tokenizer
@@ -455,6 +462,7 @@ class Tokenizer:
         return self.tokenizer(
             x, max_length=self.max_length, truncation=True, padding=True, return_tensors="pt"
         )
+
 
 class CLIPCoco(torch.nn.Module):
     def __init__(self, embed_dim=512, transformer_embed_dim=768,
@@ -473,4 +481,3 @@ class CLIPCoco(torch.nn.Module):
         caption_embed = self.caption_encoder(text_dev)
         similarity = caption_embed @ image_embed.T
         return similarity
-

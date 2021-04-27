@@ -1,9 +1,8 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 
-from utils import load_results
+from visiongeneralization.utils import load_results
 
 
 class PlotMarker:
@@ -82,7 +81,7 @@ if __name__ == '__main__':
     result_id = 229
     idx_prototypes_bar_plot = 1
 
-    accuracies, confusion_matrices, config = load_results(Path(f"results/{result_id}"))
+    accuracies, confusion_matrices, config = load_results(Path(f"../results/{result_id}"))
 
     datasets = {dataset['name']: dataset for dataset in config['datasets']}
 
