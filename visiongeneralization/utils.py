@@ -85,6 +85,20 @@ def evaluate_dataset(model_, dataset, text_inputs, labels, device, batch_size=64
 
 
 def get_set_features(model_, dataset, device, batch_size=64):
+    """
+    Returns all features and labels of a dataset for a given model.
+    Args:
+        model_: model to compute over. Should have an image encoder.
+        dataset:
+        device:
+        batch_size:
+
+    Returns: Couple (features, labels) where
+        features: (N_IMAGES, DIM_FEAT) where N_IMAGES is the number of images in the dataset
+        labels: (N_IMAGES,) the labels for each feature.
+
+    """
+    assert model_.has_image_encoder, "Model should have an image encoder."
     dataloader = torch.utils.data.DataLoader(dataset, batch_size)
     dataloader_iter = iter(dataloader)
 
@@ -92,7 +106,9 @@ def get_set_features(model_, dataset, device, batch_size=64):
     labels = []
 
     for image_input, target in tqdm(dataloader_iter, total=len(dataloader_iter)):
+        # Get feature from image
         feature = model_.encode_image(image_input.to(device))
+        # normalize by the norm of the vector to compute the dot product later on.
         feature /= feature.norm(dim=-1, keepdim=True)
         features.append(feature.detach().cpu().numpy())
         labels.extend(target.tolist())
@@ -100,8 +116,24 @@ def get_set_features(model_, dataset, device, batch_size=64):
 
 
 def get_prototypes(model_, train_set, device, n_examples_per_class=5, n_classes=10, *params, **kwargs):
+    """
+    Returns class prototypes of a given model and dataset.
+    Args:
+        model_: model to use. Should have the encode_image method.
+        train_set:
+        device:
+        n_examples_per_class: number of examples to use to compute the prototypes. -1 for all images of the dataset.
+        n_classes: Number of classes in the dataset.
+        *params: Extra parameters of get_set_features in the case of -1 for n_examples_per_class.
+        **kwargs: Extra parameters of get_set_features in the case of -1 for n_examples_per_class.
+
+    Returns:
+
+    """
+    assert model_.has_image_encoder, "Model should have an image encoder."
     assert n_examples_per_class >= 1 or n_examples_per_class == -1
 
+    # If we use all the images
     if n_examples_per_class == -1:
         all_features, labels = get_set_features(model_, train_set, device, *params, **kwargs)
         features = np.zeros((n_classes, all_features.shape[1]))
@@ -113,6 +145,7 @@ def get_prototypes(model_, train_set, device, n_examples_per_class=5, n_classes=
             counts[k] = np.sum(labels == k)
         return torch.from_numpy(features), torch.from_numpy(std), torch.from_numpy(counts)
 
+    # If we use a subset of image, start by selecting a few
     prototypes = [[] for k in range(n_classes)]
     done = []
     for image, label in iter(train_set):
@@ -124,6 +157,7 @@ def get_prototypes(model_, train_set, device, n_examples_per_class=5, n_classes=
             break
     features = []
     std = []
+    # The compute mean and std
     for proto_imgs in prototypes:
         imgs = torch.stack(proto_imgs, dim=0).to(device)
         feature = model_.encode_image(imgs)
@@ -136,10 +170,23 @@ def get_prototypes(model_, train_set, device, n_examples_per_class=5, n_classes=
 
 
 def t_test(x, y, x_std, y_std, count_x, count_y):
+    """
+    Unequal variance t-test (see https://en.wikipedia.org/wiki/Welch%27s_t-test)
+    """
     return (x - y) / np.sqrt(np.square(x_std) / count_x + np.square(y_std) / count_y)
 
 
 def get_rdm(features, feature_std=None, feature_counts=None):
+    """
+    Computed the rdm given a features matrix
+    Args:
+        features: Matrix of features (N_classes, Feat_dim). Features are the mean over all image/text examples.
+        feature_std: std of the class examples (std associated to the means given by features)
+        feature_counts: count of examples per class (e.g. 2 if 2 images are used to compute the features of the class)
+
+    Returns: RDM matrix
+    """
+    # Use numpy arrays
     features = features.cpu().numpy()
     if feature_std is not None:
         feature_std = feature_std.cpu().numpy()
@@ -148,6 +195,7 @@ def get_rdm(features, feature_std=None, feature_counts=None):
     for i in range(features.shape[0]):
         for j in range(i + 1, features.shape[0]):
             if feature_std is not None:
+                # then use the t-test distance
                 rdm[i, j] = np.linalg.norm(t_test(features[i], features[j], feature_std[i],
                                                   feature_std[j], feature_counts[i], feature_counts[j]))
             else:
@@ -196,6 +244,13 @@ def project_rdms(rdm_resnet, rdm_bert, rdm_model):
 
 
 def load_results(results_path: Path):
+    """
+    Load checkpoint
+    Args:
+        results_path: path to checkpoint
+
+    Returns: loaded config and dictionary of all .npy file saved for this experiment.
+    """
     with open(results_path / "config.json", "r") as f:
         config = json.load(f)
 
@@ -207,6 +262,13 @@ def load_results(results_path: Path):
 
 
 def save_results(results_path, config, **params):
+    """
+    Save checkpoints to npy file.
+    Args:
+        results_path: path to checkpoint
+        config: configuration of experiment
+        **params: files to save. One .npy file will be crated by element in the params dict.
+    """
     results_path = Path(results_path)
     print(f"Saving results in {str(results_path)}...")
     results_path.mkdir(exist_ok=True)
