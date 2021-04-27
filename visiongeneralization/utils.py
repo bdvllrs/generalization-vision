@@ -223,7 +223,7 @@ def run(fun, config: dict, load_saved_results: int = None, **params):
         fun: main function to execute. Takes parameters: config, **params
         config: config dict. Saved in checkpoints.
         load_saved_results: An id of previous experiment to load the config and **params from.
-            the *new* config overrides the old one; the *old* **params overrides the new ones.
+            the *provided* config overrides the loaded one; the *loaded* **params overrides the provided ones.
         **params: additional parameters to save.
     """
 
