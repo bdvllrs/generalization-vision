@@ -14,7 +14,7 @@ if __name__ == '__main__':
     result_id = 229
     idx_prototypes_bar_plot = 1
 
-    results_data, config = load_results(Path(f"../results/{result_id}"))
+    config, results_data = load_results(Path(f"../results/{result_id}"))
     accuracies = results_data["accuracies"]
 
     datasets = {dataset['name']: dataset for dataset in config['datasets']}
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             ax.set_xlabel("")
     # fig.suptitle("Few-shot accuracies on various datasets and models")
     plt.tight_layout(.5)
-    plt.savefig(f"results/{result_id}/few-shot-acc.svg", format="svg")
+    plt.savefig(f"../results/{result_id}/few-shot-acc.svg", format="svg")
     plt.show()
 
     # fig = plt.figure(figsize=(5 * n_cols, 5 * n_rows))
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     #     ax.set_xlabel("")
     #
     # fig.suptitle("5-shot accuracies on various datasets and models")
-    # plt.savefig(f"results/{result_id}/plot_bar.svg", format="svg")
+    # plt.savefig(f"../results/{result_id}/plot_bar.svg", format="svg")
     # plt.show()
 
     print(config)

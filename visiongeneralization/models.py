@@ -71,8 +71,9 @@ class BERTModel(torch.nn.Module):
 
 def get_model(model_name, device, keep_fc=False):
     if "CLIP" in model_name and model_name.replace("CLIP-", "") in clip_models:
-        model, transform = clip.load(model_name.replace("CLIP-", ""), device=device, jit=False)
+        model, transformation = clip.load(model_name.replace("CLIP-", ""), device=device, jit=False)
         model = CLIPLanguageModel(model, model.visual.output_dim)
+        transform = lambda ims, augment: transformation
     elif model_name == "RN50":
         resnet = resnet50(pretrained=True)
         if not keep_fc:
@@ -140,10 +141,10 @@ def get_model(model_name, device, keep_fc=False):
     # Language models
     elif model_name == "BERT":
         model = BERTModel()
-        transform = None
+        transform = lambda x, y: None
     elif model_name == "GPT2":
         model = GPT2Model()
-        transform = None
+        transform = lambda x, y: None
     elif model_name == "Word2Vec":
         # TODO
         raise ValueError(f"{model_name} is not a valid model name.")

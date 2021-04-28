@@ -20,7 +20,7 @@ if __name__ == '__main__':
     result_id = 238
     idx_prototypes_bar_plot = 1
 
-    results_data, config = load_results(Path(f"../results/{result_id}"))
+    config, results_data = load_results(Path(f"../results/{result_id}"))
     checkpoint = results_data['checkpoint']
 
     n_rows = 2

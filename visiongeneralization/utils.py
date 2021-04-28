@@ -305,7 +305,7 @@ def run(fun, config: dict, load_saved_results: int = None, **params):
     # load the config and params if id is provided.
     loaded_config = config
     if load_saved_results is not None:
-        loaded_config, loaded_results = load_results(Path(f"results/{load_saved_results}"))
+        loaded_config, loaded_results = load_results(Path(f"../results/{load_saved_results}"))
         params.update(loaded_results)
         loaded_config.update(config)
 

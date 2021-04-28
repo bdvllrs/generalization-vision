@@ -27,7 +27,7 @@ if __name__ == '__main__':
     result_id = 227
     idx_prototypes_bar_plot = 1
 
-    results_data, config = load_results(Path(f"../results/{result_id}"))
+    config, results_data = load_results(Path(f"../results/{result_id}"))
     accuracies = results_data["accuracies"]
 
     n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
     plt.tight_layout(.5)
     # fig.suptitle("Few-shot accuracies on various datasets and models")
-    plt.savefig(f"results/{result_id}/averaged_performances.svg", format="svg")
+    plt.savefig(f"../results/{result_id}/averaged_performances.svg", format="svg")
     plt.show()
 
     # # Dataset wise plot_vis
@@ -148,5 +148,5 @@ if __name__ == '__main__':
     #         ax.set_xlabel("")
     # # fig.suptitle("Few-shot accuracies on various datasets and models")
     # plt.tight_layout(.5)
-    # plt.savefig(f"results/{result_id}/clustering-acc.svg", format="svg")
+    # plt.savefig(f"../results/{result_id}/clustering-acc.svg", format="svg")
     # plt.show()

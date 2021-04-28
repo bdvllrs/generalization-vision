@@ -34,17 +34,17 @@ def plot_dendrogram(model, **kwargs):
 
 
 if __name__ == '__main__':
-    result_id = 230
+    result_id = 290
     idx_prototypes_bar_plot = 1
 
     dataset = "ImageNet"
 
     figsize = 5
 
-    result_data, config = load_results(Path(f"../results/{result_id}"))
+    config, result_data = load_results(Path(f"../results/{result_id}"))
     # correlations, significance, features, dim_reduced_features,
     correlations = result_data["correlations"]
-    features = result_data["features"]
+    features = result_data["feature_cache"]
     dim_reduced_features = result_data["dim_reducted_features"]
 
     # # UMAP
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     #     plt.text(xc, yc, t)
     # # plt.title("UMAP of RDMs")
     # plt.tight_layout(.5)
-    # plt.savefig(f"results/{result_id}/umap_rdms.eps", format="eps")
+    # plt.savefig(f"../results/{result_id}/umap_rdms.eps", format="eps")
     # plt.show()
 
     # # tSNE
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     y0, y1 = ax.get_ylim()
     ax.set_aspect((x1 - x0) / (y1 - y0))
     plt.tight_layout(pad=1)
-    plt.savefig(f"results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms_3.svg", format="svg")
+    plt.savefig(f"../results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms_3.svg", format="svg")
     plt.show()
 
     # PCA
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     # plt.xlabel("1st component")
     # plt.ylabel("2nd component")
     plt.tight_layout(.5)
-    plt.savefig(f"results/{result_id}/pca_rdms.eps", format="eps")
+    plt.savefig(f"../results/{result_id}/pca_rdms.eps", format="eps")
     plt.show()
 
 
@@ -127,12 +127,12 @@ if __name__ == '__main__':
     sn.heatmap(mat, annot=True, xticklabels=labels, yticklabels=labels)
     # plt.title("Pearson correlations between RDMs of vision and text models.")
     plt.tight_layout(pad=.5)
-    plt.savefig(f"results/{result_id}/plot_corr.eps", format="eps")
+    plt.savefig(f"../results/{result_id}/plot_corr.eps", format="eps")
     plt.show()
 
     # plt.figure(figsize=(figsize, figsize))
     # sn.heatmap(pval, annot=True, xticklabels=labels, yticklabels=labels)
     # # plt.title("Pearson correlations between RDMs of vision and text models.")
     # plt.tight_layout(.5)
-    # plt.savefig(f"results/{result_id}/plot_pval.eps", format="eps")
+    # plt.savefig(f"../results/{result_id}/plot_pval.eps", format="eps")
     # plt.show()

@@ -107,10 +107,10 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
+        "CLIP-RN50",
         "RN50",
         "virtex",
         "BiT-M-R50x1",
-        "CLIP-RN50",
         "madry-imagenet_l2_3_0",
         "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",

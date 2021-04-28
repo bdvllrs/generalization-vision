@@ -60,8 +60,8 @@ if __name__ == '__main__':
     model_names = [
         # "semi-supervised-YFCC100M",
         # "semi-weakly-supervised-instagram",
+        # "BiT-M-R50x1",
         "RN50",
-        "BiT-M-R50x1",
         "geirhos-resnet50_trained_on_SIN",
         "madry-imagenet_l2_3_0",
         # "virtex",
