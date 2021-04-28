@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 from sklearn.decomposition import PCA
 
 from visiongeneralization.datasets.datasets import get_dataset
@@ -60,8 +60,8 @@ def main(config, acc):
                 for dataset in datasets:
                     # Get dataset
                     dataset_train, dataset_test, class_names, caption_class_location = get_dataset(dataset, transform)
-                    for k in range(10):
-                        plot_img(dataset_test, k)
+                    # for k in range(10):
+                    #     plot_img(dataset_test, k)
 
                     print(f"{model_name}. {dataset['name']}.")
 
@@ -72,21 +72,22 @@ def main(config, acc):
                         # Define class prototypes
                         all_features, labels = get_set_features(model, dataset_test, device,
                                                                 batch_size=dataset['batch_size'],
-                                                                normalize_feature=True)
-                        clustering_algorithm = AgglomerativeClustering(n_clusters=len(class_names),
-                                                                       affinity="correlation",
-                                                                       linkage="average")
+                                                                normalize_feature=False)
+                        clustering_algorithm = SpectralClustering(n_clusters=len(class_names),
+                                                                       affinity="cosine",
+                                                                       # linkage="average"
+                                                                  )
                         predicted_labels = clustering_algorithm.fit_predict(all_features)
                         # plot pca of the features
-                        label2color = ["xkcd:light blue", "xkcd:dark blue", "xkcd:indigo", "black","xkcd:orange",
-                                       "xkcd:puce", "xkcd:light red", "xkcd:dark red",
-                                       "xkcd:dark green", "xkcd:light green"]
-                        colors = [label2color[c] for c in predicted_labels]
-                        pca = PCA(n_components=2)
-                        X_pca = pca.fit_transform(all_features)
-                        plt.figure(figsize=(5, 5))
-                        plt.scatter(X_pca[:, 0], X_pca[:, 1], c=colors)
-                        plt.show()
+                        # label2color = ["xkcd:light blue", "xkcd:dark blue", "xkcd:indigo", "black","xkcd:orange",
+                        #                "xkcd:puce", "xkcd:light red", "xkcd:dark red",
+                        #                "xkcd:dark green", "xkcd:light green"]
+                        # colors = [label2color[c] for c in predicted_labels]
+                        # pca = PCA(n_components=2)
+                        # X_pca = pca.fit_transform(all_features)
+                        # plt.figure(figsize=(5, 5))
+                        # plt.scatter(X_pca[:, 0], X_pca[:, 1], c=colors)
+                        # plt.show()
                         # Label clusters to maximize accuracy
                         permuted_predicted_labels = permute_labels(labels, predicted_labels, len(class_names))
                         # compute accuracy

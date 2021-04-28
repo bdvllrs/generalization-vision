@@ -12,8 +12,6 @@ from visiongeneralization.utils import run
 
 
 def val(model_, dataset_, batch_size):
-    assert hasattr(model_.module, "fc") or hasattr(model_.module, "head"), "Cannot evaluate if no fc layer."
-
     dataloader = DataLoader(dataset_, batch_size)
     losses = []
     num_correct = 0
@@ -21,11 +19,7 @@ def val(model_, dataset_, batch_size):
     with torch.no_grad():
         for step, (images, targets) in tqdm(enumerate(dataloader), total=len(dataloader)):
             images, targets = images.to(device), targets.to(device)
-            if hasattr(model_.module, "fc"):
-                features = model_.encode_image(images).float()
-                prediction = model_.module.fc(features)
-            elif hasattr(model_.module, "head"):
-                prediction = model_.encode_image(images, fc=True)
+            prediction = model_.encode_image(images).float()
             loss = F.cross_entropy(prediction, targets)
             predicted = torch.argmax(prediction, dim=1)
             num_correct += (predicted == targets).sum().item()
@@ -39,8 +33,9 @@ def main(config):
 
     with torch.no_grad():
         for model_name in model_names:
+            print(model_name)
             # Import model
-            model, transform = get_model(model_name, device)
+            model, transform = get_model(model_name, device, keep_fc=True)
             model.eval()
 
             for dataset in datasets:
@@ -65,11 +60,11 @@ if __name__ == '__main__':
     model_names = [
         # "semi-supervised-YFCC100M",
         # "semi-weakly-supervised-instagram",
-        "BiT-M-R50x1",
         "RN50",
+        "BiT-M-R50x1",
         "geirhos-resnet50_trained_on_SIN",
         "madry-imagenet_l2_3_0",
-        "virtex",
+        # "virtex",
         "geirhos-resnet50_trained_on_SIN_and_IN",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
         "madry-imagenet_linf_4",

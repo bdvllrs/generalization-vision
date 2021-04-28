@@ -69,13 +69,14 @@ class BERTModel(torch.nn.Module):
         return torch.tensor(embedding)[:, class_token_position + 1]  # +1 for start token
 
 
-def get_model(model_name, device):
+def get_model(model_name, device, keep_fc=False):
     if "CLIP" in model_name and model_name.replace("CLIP-", "") in clip_models:
         model, transform = clip.load(model_name.replace("CLIP-", ""), device=device, jit=False)
         model = CLIPLanguageModel(model, model.visual.output_dim)
     elif model_name == "RN50":
         resnet = resnet50(pretrained=True)
-        resnet.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        if not keep_fc:
+            resnet.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model = ModelEncapsulation(resnet, 2048)
         model = model.to(device)
         transform = get_imagenet_transform
@@ -90,7 +91,8 @@ def get_model(model_name, device):
                                         map_location=torch.device('cpu'))
         model = ModelEncapsulation(model, 2048)
         model.load_state_dict(checkpoint["state_dict"])
-        model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        if not keep_fc:
+            model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
         transform = get_imagenet_transform
     elif "madry" in model_name and model_name.replace("madry-", "") in madry_models:
@@ -101,11 +103,12 @@ def get_model(model_name, device):
                       "module.model" in mod_name}
         model = ModelEncapsulation(model, 2048)
         model.load_state_dict(checkpoint)
-        model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        if not keep_fc:
+            model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
         transform = get_imagenet_transform
     elif "BiT" in model_name and model_name in BiT_model_urls:
-        model = BiT_MODELS[model_name]()
+        model = BiT_MODELS[model_name](use_fc=keep_fc)
         model.load_from(np.load(BiT_model_urls[model_name]))
         model = ModelEncapsulation(model, 2048)
         model.to(device)
@@ -118,7 +121,8 @@ def get_model(model_name, device):
                       checkpoint.items()}
         model = ModelEncapsulation(model, 2048)
         model.load_state_dict(checkpoint)
-        model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        if not keep_fc:
+            model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
         transform = get_imagenet_transform
     elif model_name == "semi-weakly-supervised-instagram":
@@ -129,7 +133,8 @@ def get_model(model_name, device):
                       checkpoint.items()}
         model = ModelEncapsulation(model, 2048)
         model.load_state_dict(checkpoint)
-        model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        if not keep_fc:
+            model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
         transform = get_imagenet_transform
     # Language models

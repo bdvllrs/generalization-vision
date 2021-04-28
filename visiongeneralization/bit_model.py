@@ -108,7 +108,7 @@ class PreActBottleneck(nn.Module):
 class ResNetV2(nn.Module):
   """Implementation of Pre-activation (v2) ResNet mode."""
 
-  def __init__(self, block_units, width_factor, head_size=21843, zero_head=False):
+  def __init__(self, block_units, width_factor, head_size=21843, zero_head=False, use_fc=False):
     super().__init__()
     wf = width_factor  # shortcut 'cause we'll use it a lot.
 
@@ -143,6 +143,7 @@ class ResNetV2(nn.Module):
     # pylint: enable=line-too-long
 
     self.zero_head = zero_head
+    self.use_fc = use_fc
     self.head = nn.Sequential(OrderedDict([
         ('gn', nn.GroupNorm(32, 2048*wf)),
         ('relu', nn.ReLU(inplace=True)),
@@ -150,11 +151,11 @@ class ResNetV2(nn.Module):
         ('conv', nn.Conv2d(2048*wf, head_size, kernel_size=1, bias=True)),
     ]))
 
-  def forward(self, x, fc=False):
+  def forward(self, x):
     x = self.body(self.root(x))
     # Do not project to the classification space.
     for mod_name, mod in self.head.named_children():
-        if fc or mod_name != 'conv':
+        if self.use_fc or mod_name != 'conv':
             x = mod(x)
     assert x.shape[-2:] == (1, 1)  # We should have no spatial shape left.
     return x[...,0,0]
