@@ -102,6 +102,8 @@ if __name__ == '__main__':
                         help='Id of a previous experiment to continue.')
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
+    parser.add_argument('--imagenet150', action="store_true",
+                        help='Whether to use imagenet with 150 classes.')
 
     args = parser.parse_args()
 
@@ -124,10 +126,16 @@ if __name__ == '__main__':
         # "semi-weakly-supervised-instagram",
     ]
     # Dataset to test on
-    datasets = [
-        {"name": "ImageNetVal150", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/StandardInceptionDB/val"},
-        # {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
-    ]
+    datasets = []
+    if args.imagenet150:
+        datasets.append(
+            {"name": "ImageNetVal150", "batch_size": args.batch_size,
+             "root_dir": "/mnt/SSD/datasets/StandardInceptionDB/val"}
+        )
+    else:
+        datasets.append(
+            {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
+        )
 
     config = {
         "model_names": model_names,
