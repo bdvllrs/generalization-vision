@@ -31,6 +31,13 @@ def permute_labels(target, prediction, num_labels):
         permuted_labels[prediction == perm[label]] = label
     return permuted_labels
 
+def plot_img(dataset, i):
+    img, _ = dataset[i]
+    # img = img - img.min()
+    # img = img / img.max()
+    plt.imshow(img.cpu().permute(1, 2, 0).numpy())
+    plt.show()
+
 
 def main(config, acc):
     try:
@@ -53,6 +60,8 @@ def main(config, acc):
                 for dataset in datasets:
                     # Get dataset
                     dataset_train, dataset_test, class_names, caption_class_location = get_dataset(dataset, transform)
+                    for k in range(10):
+                        plot_img(dataset_test, k)
 
                     print(f"{model_name}. {dataset['name']}.")
 
@@ -63,7 +72,7 @@ def main(config, acc):
                         # Define class prototypes
                         all_features, labels = get_set_features(model, dataset_test, device,
                                                                 batch_size=dataset['batch_size'],
-                                                                normalize_feature=False)
+                                                                normalize_feature=True)
                         clustering_algorithm = AgglomerativeClustering(n_clusters=len(class_names),
                                                                        affinity="correlation",
                                                                        linkage="average")
@@ -81,7 +90,8 @@ def main(config, acc):
                         # Label clusters to maximize accuracy
                         permuted_predicted_labels = permute_labels(labels, predicted_labels, len(class_names))
                         # compute accuracy
-                        acc[model_name][dataset['name']] = (permuted_predicted_labels == labels).sum() / labels.shape[0]
+                        current_acc = (permuted_predicted_labels == labels).sum() / labels.shape[0]
+                        acc[model_name][dataset['name']] = current_acc
 
         print(acc)
         save_results(config["results_path"], config, acc=acc)

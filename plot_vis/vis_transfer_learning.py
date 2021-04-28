@@ -16,7 +16,8 @@ model_order = ["CLIP-RN50", "virtex", "BiT-M-R50x1", "RN50", "geirhos-resnet50_t
                "madry-imagenet_linf_8"]
 
 if __name__ == '__main__':
-    result_id = 212
+    # result_id = 212
+    result_id = 238
     idx_prototypes_bar_plot = 1
 
     results_data, config = load_results(Path(f"../results/{result_id}"))

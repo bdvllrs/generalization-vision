@@ -150,11 +150,11 @@ class ResNetV2(nn.Module):
         ('conv', nn.Conv2d(2048*wf, head_size, kernel_size=1, bias=True)),
     ]))
 
-  def forward(self, x):
+  def forward(self, x, fc=False):
     x = self.body(self.root(x))
     # Do not project to the classification space.
     for mod_name, mod in self.head.named_children():
-        if mod_name != 'conv':
+        if fc or mod_name != 'conv':
             x = mod(x)
     assert x.shape[-2:] == (1, 1)  # We should have no spatial shape left.
     return x[...,0,0]

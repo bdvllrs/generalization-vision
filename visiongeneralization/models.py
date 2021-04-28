@@ -20,8 +20,8 @@ class ModelEncapsulation(torch.nn.Module):
         self.has_text_encoder = False
         self.has_image_encoder = True
 
-    def encode_image(self, images):
-        return self.module(images)
+    def encode_image(self, images, **kwargs):
+        return self.module(images, **kwargs)
 
 
 class CLIPLanguageModel(ModelEncapsulation):
@@ -78,12 +78,12 @@ def get_model(model_name, device):
         resnet.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model = ModelEncapsulation(resnet, 2048)
         model = model.to(device)
-        transform = imagenet_transform
+        transform = get_imagenet_transform
     elif model_name == "virtex":
         model = ModelEncapsulation(torch.hub.load("kdexd/virtex", "resnet50", pretrained=True), 2048)
         model.module.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
         model.to(device)
-        transform = imagenet_transform
+        transform = get_imagenet_transform
     elif "geirhos" in model_name and model_name.replace("geirhos-", "") in geirhos_model_urls.keys():
         model = resnet50(pretrained=False)
         checkpoint = model_zoo.load_url(geirhos_model_urls[model_name.replace("geirhos-", "")],
@@ -92,7 +92,7 @@ def get_model(model_name, device):
         model.load_state_dict(checkpoint["state_dict"])
         model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
-        transform = imagenet_transform
+        transform = get_imagenet_transform
     elif "madry" in model_name and model_name.replace("madry-", "") in madry_models:
         model = resnet50(pretrained=False)
         checkpoint = torch.load(os.path.join(madry_model_folder, model_name.replace("madry-", "") + ".pt"),
@@ -103,19 +103,13 @@ def get_model(model_name, device):
         model.load_state_dict(checkpoint)
         model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
-        transform = imagenet_transform
+        transform = get_imagenet_transform
     elif "BiT" in model_name and model_name in BiT_model_urls:
         model = BiT_MODELS[model_name]()
         model.load_from(np.load(BiT_model_urls[model_name]))
         model = ModelEncapsulation(model, 2048)
         model.to(device)
-        transform = transforms.Compose([
-            transforms.Resize(256, interpolation=Image.BICUBIC),
-            transforms.CenterCrop(224),
-            lambda image: image.convert("RGB"),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ])
+        transform = get_imagenet_transform
     elif model_name == "semi-supervised-YFCC100M":
         model = resnet50(pretrained=False)
         checkpoint = torch.load(os.path.join(vissl_model_folder, "converted_vissl_rn50_semi_sup_08389792.torch"),
@@ -126,7 +120,7 @@ def get_model(model_name, device):
         model.load_state_dict(checkpoint)
         model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
-        transform = imagenet_transform
+        transform = get_imagenet_transform
     elif model_name == "semi-weakly-supervised-instagram":
         model = resnet50(pretrained=False)
         checkpoint = torch.load(os.path.join(vissl_model_folder, "converted_vissl_rn50_semi_weakly_sup_16a12f1b.torch"),
@@ -137,7 +131,7 @@ def get_model(model_name, device):
         model.load_state_dict(checkpoint)
         model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
-        transform = imagenet_transform
+        transform = get_imagenet_transform
     # Language models
     elif model_name == "BERT":
         model = BERTModel()
@@ -169,10 +163,20 @@ madry_models = ["imagenet_l2_3_0", "imagenet_linf_4", "imagenet_linf_8"]
 
 imagenet_norm_mean, imagenet_norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
-imagenet_transform = transforms.Compose([
-    transforms.Resize(256, interpolation=Image.BICUBIC),
-    transforms.CenterCrop(224),
-    lambda image: image.convert("RGB"),
-    transforms.ToTensor(),
-    transforms.Normalize(imagenet_norm_mean, imagenet_norm_std)
-])
+def get_imagenet_transform(img_size=256, augmentation=False):
+    img_size_resize = img_size + 20 if augmentation and img_size > 128 else img_size
+    transformations = [
+        transforms.Resize(img_size_resize, interpolation=Image.BICUBIC),
+        (transforms.RandomResizedCrop(img_size, interpolation=Image.BICUBIC) if augmentation and img_size > 128
+         else transforms.CenterCrop(img_size)),
+    ]
+    if augmentation:
+        transformations.append(transforms.RandomHorizontalFlip())
+
+    transformations.extend([
+        lambda image: image.convert("RGB"),
+        transforms.ToTensor(),
+        transforms.Normalize(imagenet_norm_mean, imagenet_norm_std)
+    ])
+
+    return transforms.Compose(transformations)

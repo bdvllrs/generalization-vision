@@ -21,11 +21,11 @@ def val(model_, dataset_, batch_size):
     with torch.no_grad():
         for step, (images, targets) in tqdm(enumerate(dataloader), total=len(dataloader)):
             images, targets = images.to(device), targets.to(device)
-            features = model_.encode_image(images).float()
             if hasattr(model_.module, "fc"):
+                features = model_.encode_image(images).float()
                 prediction = model_.module.fc(features)
             elif hasattr(model_.module, "head"):
-                prediction = model_.module.head(features)
+                prediction = model_.encode_image(images, fc=True)
             loss = F.cross_entropy(prediction, targets)
             predicted = torch.argmax(prediction, dim=1)
             num_correct += (predicted == targets).sum().item()
@@ -65,8 +65,8 @@ if __name__ == '__main__':
     model_names = [
         # "semi-supervised-YFCC100M",
         # "semi-weakly-supervised-instagram",
-        "RN50",
         "BiT-M-R50x1",
+        "RN50",
         "geirhos-resnet50_trained_on_SIN",
         "madry-imagenet_l2_3_0",
         "virtex",
