@@ -52,7 +52,7 @@ class GPT2Model(torch.nn.Module):
     def encode_text(self, text, device, class_token_position=0):
         inputs = self.tokenizer(text, return_tensors="pt", padding=True)
         hidden_states = self.transformer_model(**inputs, output_hidden_states=True)['hidden_states']
-        return hidden_states[class_token_position + 1]  # +1 for start token
+        return hidden_states[-1][:, class_token_position + 1]  # +1 for start token
 
 
 class BERTModel(torch.nn.Module):
@@ -170,6 +170,7 @@ madry_models = ["imagenet_l2_3_0", "imagenet_linf_4", "imagenet_linf_8"]
 imagenet_norm_mean, imagenet_norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
 def get_imagenet_transform(img_size=256, augmentation=False):
+    img_size = 256  # force full size
     img_size_resize = img_size + 20 if augmentation and img_size > 128 else img_size
     transformations = [
         transforms.Resize(img_size_resize, interpolation=Image.BICUBIC),

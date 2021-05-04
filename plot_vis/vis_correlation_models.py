@@ -34,7 +34,7 @@ def plot_dendrogram(model, **kwargs):
 
 
 if __name__ == '__main__':
-    result_id = 290
+    result_id = 316
     idx_prototypes_bar_plot = 1
 
     dataset = "ImageNet"
@@ -47,18 +47,18 @@ if __name__ == '__main__':
     features = result_data["feature_cache"]
     dim_reduced_features = result_data["dim_reducted_features"]
 
-    # # UMAP
-    # x_umap = dim_reduced_features['umap']
-    # y_short = [model_names_short[name] for name in dim_reduced_features['labels']]
-    # colors = [color_scheme[name] for name in dim_reduced_features['labels']]
-    # plt.figure(figsize=(figsize, figsize))
-    # plt.scatter(x_umap[:, 0], x_umap[:, 1], c=colors)
-    # for xc, yc, t in zip(x_umap[:, 0], x_umap[:, 1], y_short):
-    #     plt.text(xc, yc, t)
-    # # plt.title("UMAP of RDMs")
-    # plt.tight_layout(.5)
-    # plt.savefig(f"../results/{result_id}/umap_rdms.eps", format="eps")
-    # plt.show()
+    # UMAP
+    x_umap = dim_reduced_features['umap']
+    y_short = [model_names_short[name] for name in dim_reduced_features['labels']]
+    colors = [color_scheme[name] for name in dim_reduced_features['labels']]
+    plt.figure(figsize=(figsize, figsize))
+    plt.scatter(x_umap[:, 0], x_umap[:, 1], c=colors)
+    for xc, yc, t in zip(x_umap[:, 0], x_umap[:, 1], y_short):
+        plt.text(xc, yc, t)
+    # plt.title("UMAP of RDMs")
+    plt.tight_layout(.5)
+    plt.savefig(f"../results/{result_id}/umap_rdms.eps", format="eps")
+    plt.show()
 
     # # tSNE
     X_tsne = dim_reduced_features['tsne']
@@ -86,13 +86,13 @@ if __name__ == '__main__':
     model = AgglomerativeClustering(distance_threshold=0, n_clusters=None, affinity="correlation", linkage="average")
     model = model.fit(X)
     # plt.title("Dendrogram of hierarchical clustering of RDMs. Average linkage.")
-    plot_dendrogram(model, labels=y_short, leaf_rotation="vertical", ax=ax)
+    plot_dendrogram(model, labels=y_short, leaf_rotation="vertical", ax=ax, count_sort="ascending")
     ax.set_title("(a)")
     x0, x1 = ax.get_xlim()
     y0, y1 = ax.get_ylim()
     ax.set_aspect((x1 - x0) / (y1 - y0))
     plt.tight_layout(pad=1)
-    plt.savefig(f"../results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms_3.svg", format="svg")
+    plt.savefig(f"../results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms.svg", format="svg")
     plt.show()
 
     # PCA

@@ -55,6 +55,8 @@ markers = {
     "geirhos-resnet50_trained_on_SIN": ("xkcd:green", "-"),
     "geirhos-resnet50_trained_on_SIN_and_IN": ("xkcd:green", "--"),
     "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": ("xkcd:green", ":"),
+    "semi-supervised-YFCC100M": ("xkcd:indigo", "-"),
+    "semi-weakly-supervised-instagram": ("xkcd:indigo", "--"),
 }
 
 markers_bars = {
@@ -117,3 +119,77 @@ class PlotMarker:
 
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
+
+
+clip_paper_results = {
+    "val_acc": {
+        "CLIP-RN50": {
+            "Birdsnap": [56.4],
+            "Caltech101": [89.6],
+            "DTD": [76.4],
+            "FGVC-Aircraft": [49.1],
+            "Flowers102": [96.1],
+            "IIITPets": [88.2],
+            "SUN397": [73.3],
+            "StanfordCars": [78.3],
+            "CIFAR10": [88.7],
+            "CIFAR100": [70.3],
+            "Food101": [86.4]
+        },
+        "BiT-M-R50x1": {
+            "Birdsnap": [70.9],
+            "Caltech101": [93.9],
+            "DTD": [77.3],
+            "FGVC-Aircraft": [55.6],
+            "Flowers102": [99.4],
+            "IIITPets": [91.5],
+            "SUN397": [69.9],
+            "StanfordCars": [59.0],
+            "CIFAR10": [94.9],
+            "CIFAR100": [82.2],
+            "Food101": [83.3]
+        },
+        "RN50": {
+            "Food101": [71.3],
+            "CIFAR10": [91.8],
+            "CIFAR100": [74.5],
+            "Birdsnap": [52.7],
+            "SUN397": [60.5],
+            "StanfordCars": [49.9],
+            "FGVC-Aircraft": [48.5],
+            "VOC2007": [],
+            "DTD": [72.3],
+            "IIITPets": [92.4],
+            "Caltech101": [90.8],
+            "Flowers102": [90.8],
+        },
+        "semi-weakly-supervised-instagram": {
+            "Food101": [84.8],
+            "CIFAR10": [95.9],
+            "CIFAR100": [80.9],
+            "Birdsnap": [63.8],
+            "SUN397": [69.0],
+            "StanfordCars": [74.2],
+            "FGVC-Aircraft": [56.0],
+            "VOC2007": [],
+            "DTD": [75.4],
+            "IIITPets": [95.4],
+            "Caltech101": [93.9],
+            "Flowers102": [91.7],
+        },
+        "virtex": {
+            "Food101": [57.9],
+            "CIFAR10": [83.9],
+            "CIFAR100": [57.5],
+            "Birdsnap": [17.0],
+            "SUN397": [49.8],
+            "StanfordCars": [22.4],
+            "FGVC-Aircraft": [34.5],
+            "VOC2007": [],
+            "DTD": [58.2],
+            "IIITPets": [53.6],
+            "Caltech101": [70.6],
+            "Flowers102": [74.7],
+        }
+    }
+}

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy
 import torch
 from sklearn.metrics import confusion_matrix as confusion_matrix_, accuracy_score as accuracy_score_
 from torch.utils import model_zoo
@@ -178,7 +179,7 @@ def t_test(x, y, x_std, y_std, count_x, count_y):
     return (x - y) / np.sqrt(np.square(x_std) / count_x + np.square(y_std) / count_y)
 
 
-def get_rdm(features, feature_std=None, feature_counts=None):
+def get_rdm(features, feature_std=None, feature_counts=None, metric="t-test"):
     """
     Computed the rdm given a features matrix
     Args:
@@ -189,6 +190,8 @@ def get_rdm(features, feature_std=None, feature_counts=None):
     Returns: RDM matrix
     """
     # Use numpy arrays
+    valid_metrics = ["t-test", "cosine", "correlation"]
+    assert metric in valid_metrics, f"{metric} is not a valid metric. Possible metrics: {valid_metrics}."
     features = features.cpu().numpy()
     if feature_std is not None:
         feature_std = feature_std.cpu().numpy()
@@ -196,12 +199,17 @@ def get_rdm(features, feature_std=None, feature_counts=None):
     rdm = np.zeros((features.shape[0], features.shape[0]))
     for i in range(features.shape[0]):
         for j in range(i + 1, features.shape[0]):
-            if feature_std is not None:
+            if metric == "correlation":
+                rdm[i, j] = scipy.stats.pearsonr(features[i], features[j])[0]
+            elif metric == "cosine":
+                rdm[i, j] = scipy.spatial.distance.cosine(features[i], features[j])
+            elif metric == "t-test" and feature_std is not None:
                 # then use the t-test distance
                 rdm[i, j] = np.linalg.norm(t_test(features[i], features[j], feature_std[i],
                                                   feature_std[j], feature_counts[i], feature_counts[j]))
-            else:
+            elif metric == "t-test" and feature_std is None:
                 rdm[i, j] = np.linalg.norm(features[i] - features[j])
+
             rdm[j, i] = rdm[i, j]
     return rdm
 

@@ -120,10 +120,12 @@ def main(config, checkpoint):
                     n_workers
                 )
 
+                print("Saving...")
                 checkpoint['models'][model_name][dataset['name']] = linear_probe.state_dict()
                 checkpoint['train_losses'][model_name][dataset['name']] = train_losses
                 checkpoint['val_losses'][model_name][dataset['name']] = val_losses
                 checkpoint['val_acc'][model_name][dataset['name']] = val_acc
+                save_results(config["results_path"], config, checkpoint=checkpoint)
 
         save_results(config["results_path"], config, checkpoint=checkpoint)
     except BaseException as e:
@@ -167,31 +169,31 @@ if __name__ == '__main__':
 
     # Dataset to test on
     datasets = [
-        {"name": "Birdsnap", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/birdsnap/birdsnap")},
-        {"name": "Caltech101", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/caltech101/101_ObjectCategories")},
-        {"name": "Caltech256", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/caltech256/256_ObjectCategories")},
-        {"name": "DTD", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/DescribableTextures/dtd")},
-        {"name": "FGVC-Aircraft", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/FGVC-Aircraft/fgvc-aircraft-2013b")},
-        {"name": "Food101", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/food101/food-101")},
-        {"name": "Flowers102", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/flowers102")},
-        {"name": "IIITPets", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/OxfordPets")},
-        {"name": "SUN397", "batch_size": args.batch_size, "root_dir": os.path.expanduser("/mnt/SSD/datasets/SUN")},
-        {"name": "StanfordCars", "batch_size": args.batch_size,
-         "root_dir": os.path.expanduser("/mnt/SSD/datasets/StanfordCars")},
+        # {"name": "Birdsnap", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/birdsnap/birdsnap")},
+        # {"name": "Caltech101", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/caltech101/101_ObjectCategories")},
+        # {"name": "Caltech256", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/caltech256/256_ObjectCategories")},
+        # {"name": "DTD", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/DescribableTextures/dtd")},
+        # {"name": "FGVC-Aircraft", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/FGVC-Aircraft/fgvc-aircraft-2013b")},
+        # {"name": "Food101", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/food101/food-101")},
+        # {"name": "Flowers102", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/flowers102")},
+        # {"name": "IIITPets", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/OxfordPets")},
+        # {"name": "SUN397", "batch_size": args.batch_size, "root_dir": os.path.expanduser("/mnt/SSD/datasets/SUN")},
+        # {"name": "StanfordCars", "batch_size": args.batch_size,
+        #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/StanfordCars")},
         {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        # {"name": "HouseNumbers", "batch_size": 64, "root_dir": "/mnt/HD1/datasets/StreetViewHouseNumbers/format2"},
-        # {"name": "CUB", "batch_size": 64, "root_dir": "/mnt/HD1/datasets/CUB/CUB_200_2011"},
-        # {"name": "MNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
-        # {"name": "FashionMNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
+        {"name": "HouseNumbers", "batch_size": 64, "root_dir": "/mnt/SSD/datasets/StreetViewHouseNumbers/format2"},
+        {"name": "CUB", "batch_size": 64, "root_dir": "/mnt/SSD/datasets/CUB/CUB_200_2011"},
+        {"name": "MNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
+        {"name": "FashionMNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
     ]
 
     config = {

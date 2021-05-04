@@ -20,6 +20,8 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
         model_names, datasets = config["model_names"], config["datasets"]
         override_models = config["override_models"]
         caption_sentence_prototypes = config["caption_sentence_prototypes"]
+        rda_correlation_type = config["rda_correlation_type"]
+        assert rda_correlation_type in ["spearman", "pearson", "kendall"]
 
         for item in override_models:
             del feature_cache[item]
@@ -43,7 +45,7 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
                             model, dataset_test, device, n_examples_per_class=-1,
                             n_classes=len(class_names), batch_size=dataset['batch_size']
                         )
-                        rdm_model = squareform(get_rdm(class_features, class_features_std, class_feature_counts),
+                        rdm_model = squareform(get_rdm(class_features, class_features_std, class_feature_counts, metric=config["rdm_distance_metric"]),
                                                checks=False)
                         feature_cache[model_name] = rdm_model
 
@@ -54,7 +56,7 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
                         captions = [caption_prototype.format(classname=classname) for classname in class_names]
                         model_language_features = model.encode_text(captions, device,
                                                                     class_token_position + caption_class_location)
-                        rdm_model_language = squareform(get_rdm(model_language_features), checks=False)
+                        rdm_model_language = squareform(get_rdm(model_language_features, metric=config["rdm_distance_metric"]), checks=False)
                         feature_cache[model_name + "_text"] = rdm_model_language
 
             # Compute correlations between all models
@@ -62,7 +64,12 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
                 correlations[model_1] = {}
                 significance[model_1] = {}
                 for model_2, rdm_model_2 in feature_cache.items():
-                    r, p = scipy.stats.pearsonr(rdm_model_1, rdm_model_2)
+                    if rda_correlation_type == "pearson":
+                        r, p = scipy.stats.pearsonr(rdm_model_1, rdm_model_2)
+                    elif rda_correlation_type == "spearman":
+                        r, p = scipy.stats.spearmanr(rdm_model_1, rdm_model_2)
+                    elif rda_correlation_type == "kendall":
+                        r, p = scipy.stats.kendalltau((rdm_model_1, rdm_model_2))
                     correlations[model_1][model_2] = r
                     significance[model_1][model_2] = p
 
@@ -71,7 +78,7 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
         X = np.stack(X, axis=0)
         reducer = umap.UMAP(n_components=2, min_dist=0.05, n_neighbors=5, metric="correlation")
         x_umap = reducer.fit_transform(X)
-        tsne = TSNE(n_components=2, perplexity=3, learning_rate=1, min_grad_norm=0, metric="correlation")
+        tsne = TSNE(n_components=2, perplexity=3, min_grad_norm=0, metric="correlation")
         X_tsne = tsne.fit_transform(X)
 
         dim_reducted_features = {
@@ -102,6 +109,10 @@ if __name__ == '__main__':
                         help='Id of a previous experiment to continue.')
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
+    parser.add_argument('--rdm_distance_metric', type=str, default="correlation", choices=["t-test", "cosine", "correlation"],
+                        help='Metric to use to compute the RDMs.')
+    parser.add_argument('--rda_correlation_type', type=str, default="pearson", choices=["pearson", "spearman", "kendall"],
+                        help='Correlation formula to use to correlate the RDMs.')
     parser.add_argument('--imagenet150', action="store_true",
                         help='Whether to use imagenet with 150 classes.')
 
@@ -119,11 +130,11 @@ if __name__ == '__main__':
         "geirhos-resnet50_trained_on_SIN",
         "geirhos-resnet50_trained_on_SIN_and_IN",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "BERT",
         "GPT2",
+        "BERT",
         # "Word2Vec",
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
+        "semi-supervised-YFCC100M",
+        "semi-weakly-supervised-instagram",
     ]
     # Dataset to test on
     datasets = []
@@ -140,6 +151,8 @@ if __name__ == '__main__':
     config = {
         "model_names": model_names,
         "datasets": datasets,
+        "rdm_distance_metric": args.rdm_distance_metric,
+        "rda_correlation_type": args.rda_correlation_type,
         "caption_sentence_prototypes": ("a photo of {classname}.", 3),
         "override_models": []
     }
