@@ -10,7 +10,9 @@ model_order = ["CLIP-RN50", "virtex", "BiT-M-R50x1", "RN50", "geirhos-resnet50_t
                "geirhos-resnet50_trained_on_SIN_and_IN",
                "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
                "madry-imagenet_linf_4",
-               "madry-imagenet_linf_8", "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"]
+               "madry-imagenet_linf_8",
+               # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
+               ]
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
 

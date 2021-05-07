@@ -78,7 +78,7 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
         X = np.stack(X, axis=0)
         reducer = umap.UMAP(n_components=2, min_dist=0.05, n_neighbors=5, metric="correlation")
         x_umap = reducer.fit_transform(X)
-        tsne = TSNE(n_components=2, perplexity=3, min_grad_norm=0, metric="correlation")
+        tsne = TSNE(n_components=2, perplexity=30, min_grad_norm=0, metric="correlation")
         X_tsne = tsne.fit_transform(X)
 
         dim_reducted_features = {
@@ -105,11 +105,11 @@ if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     parser = argparse.ArgumentParser(description='Correlations between models.')
-    parser.add_argument('--load_results', default=None, type=int,
+    parser.add_argument('--load_results', default=316, type=int,
                         help='Id of a previous experiment to continue.')
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
-    parser.add_argument('--rdm_distance_metric', type=str, default="correlation", choices=["t-test", "cosine", "correlation"],
+    parser.add_argument('--rdm_distance_metric', type=str, default="t-test", choices=["t-test", "cosine", "correlation"],
                         help='Metric to use to compute the RDMs.')
     parser.add_argument('--rda_correlation_type', type=str, default="pearson", choices=["pearson", "spearman", "kendall"],
                         help='Correlation formula to use to correlate the RDMs.')
@@ -120,6 +120,8 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
+        "GPT2",
+        "BERT",
         "CLIP-RN50",
         "RN50",
         "virtex",
@@ -130,11 +132,9 @@ if __name__ == '__main__':
         "geirhos-resnet50_trained_on_SIN",
         "geirhos-resnet50_trained_on_SIN_and_IN",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "GPT2",
-        "BERT",
         # "Word2Vec",
-        "semi-supervised-YFCC100M",
-        "semi-weakly-supervised-instagram",
+        # "semi-supervised-YFCC100M",
+        # "semi-weakly-supervised-instagram",
     ]
     # Dataset to test on
     datasets = []
@@ -154,7 +154,10 @@ if __name__ == '__main__':
         "rdm_distance_metric": args.rdm_distance_metric,
         "rda_correlation_type": args.rda_correlation_type,
         "caption_sentence_prototypes": ("a photo of {classname}.", 3),
-        "override_models": []
+        "override_models": [
+            # "semi-supervised-YFCC100M",
+            # "semi-weakly-supervised-instagram",
+        ]
     }
 
     run(main, config, args.load_results,

@@ -74,7 +74,7 @@ def main(config, acc):
                                                                 batch_size=dataset['batch_size'],
                                                                 normalize_feature=False)
                         clustering_algorithm = SpectralClustering(n_clusters=len(class_names),
-                                                                       affinity="cosine",
+                                                                       affinity="correlation",
                                                                        # linkage="average"
                                                                   )
                         predicted_labels = clustering_algorithm.fit_predict(all_features)

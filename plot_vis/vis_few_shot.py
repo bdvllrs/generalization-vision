@@ -6,6 +6,13 @@ from utils import dataset_names_short, model_names_short, markers, chance_levels
 from visiongeneralization.utils import load_results
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
+model_order = ["CLIP-RN50", "virtex", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
+               "geirhos-resnet50_trained_on_SIN_and_IN",
+               "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
+               "madry-imagenet_linf_4",
+               "madry-imagenet_linf_8",
+               # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
+               ]
 
 if __name__ == '__main__':
     # result_id = 76
@@ -21,17 +28,18 @@ if __name__ == '__main__':
     datasets = {dataset['name']: dataset for dataset in config['datasets']}
 
     n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
-    n_cols = n_datasets // 2
-    n_rows = 2
+    n_cols = n_datasets
+    n_rows = 1
     figsize = 3
 
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     for k, dataset_name in enumerate(dataset_order):
         dataset = datasets[dataset_name]
-        i, j = k // n_cols, k % n_cols
-        ax = axes[i][j]
-        for model, model_accuracies in accuracies.items():
+        # i, j = k // n_cols, k % n_cols
+        ax = axes[k]
+        for model in model_order:
+            model_accuracies = accuracies[model]
             if dataset['name'] in model_accuracies and model in model_names_short:
                 items = sorted(model_accuracies[dataset['name']].items(), key=lambda x: x[0])
                 x, y = zip(*items)

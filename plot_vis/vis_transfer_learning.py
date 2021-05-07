@@ -6,8 +6,9 @@ import numpy as np
 from utils import moving_average, markers, model_names_short, dataset_names_short, markers_bars, chance_levels, clip_paper_results
 from visiongeneralization.utils import load_results
 
-dataset_order = ["CIFAR10", "CIFAR100", "Caltech101", "DTD", "FGVC-Aircraft", "Food101", "Flowers102",
-                 "IIITPets", "SUN397", "StanfordCars", "Birdsnap"]
+# dataset_order = ["CIFAR10", "CIFAR100", "Caltech101", "DTD", "FGVC-Aircraft", "Food101", "Flowers102",
+#                  "IIITPets", "SUN397", "StanfordCars", "Birdsnap"]
+dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
 
 model_order = ["CLIP-RN50", "virtex", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
                "geirhos-resnet50_trained_on_SIN_and_IN",
@@ -18,20 +19,21 @@ model_order = ["CLIP-RN50", "virtex", "BiT-M-R50x1", "RN50", "geirhos-resnet50_t
 
 if __name__ == '__main__':
     # result_id = 212
-    result_id = 238
+    result_id = 328
     idx_prototypes_bar_plot = 1
 
-    # config, results_data = load_results(Path(f"../results/{result_id}"))
-    # checkpoint = results_data['checkpoint']
-    checkpoint = clip_paper_results
+    config, results_data = load_results(Path(f"../results/{result_id}"))
+    checkpoint = results_data['checkpoint']
+    # checkpoint = clip_paper_results
 
-    n_rows = 2
-    n_cols = 6
-    figsize = 3
-    fig, ax = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
-
+    # n_rows = 1
+    # n_cols = 6
+    # figsize = 3
+    # fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
+    #
     # for k, dataset in enumerate(dataset_order):
     #     i, j = k // n_cols, k % n_cols
+    #     ax = axes[i, j]
     #     for model in checkpoint['train_losses'].keys():
     #         if model in markers:
     #             if dataset in checkpoint['train_losses'][model]:
@@ -39,80 +41,83 @@ if __name__ == '__main__':
     #                 y_train = moving_average(y_train, 20)
     #
     #                 color, marker = markers[model]
-    #                 ax[i, j].plot(y_train, color=color, linestyle=marker, label=model_names_short[model])
+    #                 ax.plot(y_train, color=color, linestyle=marker, label=model_names_short[model])
     #     if k == 0:
-    #         ax[i, j].legend()
+    #         ax.legend()
     #     name_dataset = dataset_names_short[dataset] if dataset in dataset_names_short else dataset
-    #     ax[i, j].set_title(name_dataset)
+    #     ax.set_title(name_dataset)
     # plt.tight_layout(pad=.5)
     # plt.show()
     #
     # n_rows = 2
     # n_cols = 6
     # figsize = 3
-    # fig, ax = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
+    # fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
     #
     # for k, dataset in enumerate(dataset_order):
     #     i, j = k // n_cols, k % n_cols
+    #     ax = axes[i, j]
     #     for model in checkpoint['val_losses'].keys():
     #         if model in markers:
     #             if dataset in checkpoint['val_losses'][model]:
     #                 y_train = checkpoint['val_losses'][model][dataset]
     #                 color, marker = markers[model]
-    #                 ax[i, j].plot(y_train, color=color, linestyle=marker, label=model_names_short[model])
+    #                 ax.plot(y_train, color=color, linestyle=marker, label=model_names_short[model])
     #     if k ==0:
-    #         ax[i, j].legend()
+    #         ax.legend()
     #     name_dataset = dataset_names_short[dataset] if dataset in dataset_names_short else dataset
-    #     ax[i, j].set_title(name_dataset)
+    #     ax.set_title(name_dataset)
     # plt.tight_layout(pad=.5)
     # plt.show()
     #
-    # n_rows = 2
-    # n_cols = 6
-    # figsize = 3
-    # fig, ax = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
+    n_rows = 1
+    n_cols = 6
+    figsize = 3
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     for k, dataset in enumerate(dataset_order):
-        i, j = k // n_cols, k % n_cols
+        # i, j = k // n_cols, k % n_cols
+        ax = axes[k]
         for model in checkpoint['val_acc'].keys():
             if model in markers:
                 if dataset in checkpoint['val_acc'][model]:
                     y_train = checkpoint['val_acc'][model][dataset]
                     color, marker = markers[model]
-                    ax[i, j].plot(y_train, color=color, linestyle=marker, label=model_names_short[model])
-        ax[i, j].axhline(chance_levels[dataset], linestyle="--", color="black", label="Chance level")
+                    ax.plot(y_train, color=color, linestyle=marker, label=model_names_short[model])
+        ax.axhline(chance_levels[dataset], linestyle="--", color="black", label="Chance level")
         if k == 0:
-            ax[i, j].legend()
+            ax.legend()
         name_dataset = dataset_names_short[dataset] if dataset in dataset_names_short else dataset
-        ax[i, j].set_title(name_dataset)
+        ax.set_title(name_dataset)
     plt.tight_layout(pad=.5)
     plt.show()
 
-    n_rows = 2
+    n_rows = 1
     n_cols = 6
     figsize = 3
-    fig, ax = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     for k, dataset in enumerate(dataset_order):
-        i, j = k // n_cols, k % n_cols
+        # i, j = k // n_cols, k % n_cols
+        ax = axes[k]
         n_model = 0
         for model in model_order:
             if model in checkpoint['val_acc'].keys():
                 if dataset in checkpoint['val_acc'][model]:
                     y_train = checkpoint['val_acc'][model][dataset]
                     color, hatch = markers_bars[model]
-                    ax[i, j].bar([n_model * 0.35], y_train[-1], 0.35, color=color, hatch=hatch,
+                    ax.bar([n_model * 0.35], y_train[-1], 0.35, color=color, hatch=hatch,
                                  label=model_names_short[model])
                     n_model += 1
-        ax[i, j].axhline(chance_levels[dataset], linestyle="--", color="black", label="Chance level")
+        ax.axhline(chance_levels[dataset], linestyle="--", color="black", label="Chance level")
         if dataset == "StanfordCars":
-            ax[i, j].set_ylim(top=0.1)
+            ax.set_ylim(top=0.1)
         if k == 0:
-            ax[i, j].legend()
+            ax.legend()
         name_dataset = dataset_names_short[dataset] if dataset in dataset_names_short else dataset
-        ax[i, j].set_title(name_dataset)
-        ax[i, j].set_xticks([])
-        ax[i, j].set_xlabel("")
+        ax.set_title(name_dataset)
+        ax.set_xticks([])
+        ax.set_xlabel("")
     plt.tight_layout(pad=.5)
     plt.savefig(f"../results/{result_id}/val_acc_clip_paper.svg", format="svg")
     plt.show()
