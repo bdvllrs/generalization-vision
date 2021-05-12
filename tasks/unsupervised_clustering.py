@@ -74,7 +74,7 @@ def main(config, acc):
                                                                 batch_size=dataset['batch_size'],
                                                                 normalize_feature=False)
                         clustering_algorithm = SpectralClustering(n_clusters=len(class_names),
-                                                                       affinity="correlation",
+                                                                       affinity="cosine",
                                                                        # linkage="average"
                                                                   )
                         predicted_labels = clustering_algorithm.fit_predict(all_features)
@@ -114,15 +114,16 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
+        "ICMLM",
         "RN50",
         "CLIP-RN50",
         "BiT-M-R50x1",
         "virtex",
         "madry-imagenet_l2_3_0",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "semi-supervised-YFCC100M",
-        "semi-weakly-supervised-instagram",
-        "madry-imagenet_linf_4",
+        # "semi-supervised-YFCC100M",
+        # "semi-weakly-supervised-instagram",
+        # "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
         "geirhos-resnet50_trained_on_SIN",
         "geirhos-resnet50_trained_on_SIN_and_IN",

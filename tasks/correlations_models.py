@@ -41,10 +41,23 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
                     # For vision models
                     if model.has_image_encoder and model_name not in feature_cache:
                         # Define class prototypes
-                        class_features, class_features_std, class_feature_counts = get_prototypes(
-                            model, dataset_test, device, n_examples_per_class=-1,
-                            n_classes=len(class_names), batch_size=dataset['batch_size']
-                        )
+                        if "TSM" in model_name:
+                            act_val = "vat" if model_name == "TSM-shared" else "before_head"
+                            vec = np.load("/home/bhavin/Desktop/tsmresnet50vecs.p", allow_pickle=True)
+                            class_features, class_features_std, class_feature_counts = [], [], []
+                            for k in range(1000):
+                                features = np.concatenate(vec[act_val][dataset_test.wnids[k]], axis=0)
+                                class_features.append(np.mean(features, axis=0))
+                                class_features_std.append(np.std(features, axis=0))
+                                class_feature_counts.append(features.shape[0])
+                            class_features = torch.from_numpy(np.vstack(class_features))
+                            class_features_std = torch.from_numpy(np.vstack(class_features_std)) + 1e-6
+                            class_feature_counts = torch.from_numpy(np.vstack(class_feature_counts))
+                        else:
+                            class_features, class_features_std, class_feature_counts = get_prototypes(
+                                model, dataset_test, device, n_examples_per_class=-1,
+                                n_classes=len(class_names), batch_size=dataset['batch_size']
+                            )
                         rdm_model = squareform(get_rdm(class_features, class_features_std, class_feature_counts, metric=config["rdm_distance_metric"]),
                                                checks=False)
                         feature_cache[model_name] = rdm_model
@@ -78,7 +91,7 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
         X = np.stack(X, axis=0)
         reducer = umap.UMAP(n_components=2, min_dist=0.05, n_neighbors=5, metric="correlation")
         x_umap = reducer.fit_transform(X)
-        tsne = TSNE(n_components=2, perplexity=30, min_grad_norm=0, metric="correlation")
+        tsne = TSNE(n_components=2, perplexity=3, min_grad_norm=0, metric="correlation")
         X_tsne = tsne.fit_transform(X)
 
         dim_reducted_features = {
@@ -102,10 +115,10 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
 
 
 if __name__ == '__main__':
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cuda:2" if torch.cuda.is_available() else "cpu"
 
     parser = argparse.ArgumentParser(description='Correlations between models.')
-    parser.add_argument('--load_results', default=316, type=int,
+    parser.add_argument('--load_results', default=344, type=int,
                         help='Id of a previous experiment to continue.')
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
@@ -120,6 +133,9 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
+        "TSM-visual",
+        "TSM-shared",
+        "ICMLM",
         "GPT2",
         "BERT",
         "CLIP-RN50",

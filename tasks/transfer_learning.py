@@ -160,10 +160,11 @@ if __name__ == '__main__':
         "madry-imagenet_l2_3_0",
         # "CLIP-ViT-B/32",
         "geirhos-resnet50_trained_on_SIN",
-        "semi-supervised-YFCC100M",
-        "semi-weakly-supervised-instagram",
+        # "semi-supervised-YFCC100M",
+        # "semi-weakly-supervised-instagram",
+        "ICMLM",
         "geirhos-resnet50_trained_on_SIN_and_IN",
-        "madry-imagenet_linf_4",
+        # "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
     ]
 

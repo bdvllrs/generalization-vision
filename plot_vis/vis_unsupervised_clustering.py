@@ -6,7 +6,7 @@ import numpy as np
 from utils import markers_bars, dataset_names_short, model_names_short, chance_levels
 from visiongeneralization.utils import load_results
 
-model_order = ["CLIP-RN50", "virtex", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
+model_order = ["CLIP-RN50", "virtex", "ICMLM", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
                "geirhos-resnet50_trained_on_SIN_and_IN",
                "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
                "madry-imagenet_linf_4",
@@ -19,98 +19,9 @@ dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNu
 few_shot_indices = [1, 5, 10]
 
 if __name__ == '__main__':
-    n_cols = 1 + len(few_shot_indices)
-    n_rows = 1
-    figsize = 3
-
-    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(figsize * n_cols, figsize * n_rows))
-
-    # result_id = 46
-    # result_id = 227
-    result_id = 299
-    idx_prototypes_bar_plot = 1
-
-    config, results_data = load_results(Path(f"../results/{result_id}"))
-    accuracies = results_data["acc"]
-
-    n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
-    ax = axes[-1]
-
-    models = {'chance': []}
-
-    for k, dataset in enumerate(config['datasets']):
-        models['chance'].append(chance_levels[dataset['name']])
-        for i, (model, model_accuracies) in enumerate(accuracies.items()):
-            if dataset['name'] in model_accuracies:
-                if model not in models:
-                    models[model] = []
-                models[model].append(model_accuracies[dataset['name']])
-
-    for k, model_name in enumerate(model_order):
-        accuracies = models[model_name]
-        if model_name in model_names_short:
-            color, hatch = markers_bars[model_name]
-            ax.bar([k * 0.35], np.mean(accuracies), 0.35, color=color, hatch=hatch,
-                   yerr=(np.std(accuracies) / np.sqrt(len(accuracies))), label=model_names_short[model_name])
-    ax.axhline(np.mean(models['chance']), linestyle="--", color="black", label="Average chance level")
-    ax.set_title("Clustering")
-    # ax.set_ylabel("Accuracy")
-    ax.set_ylim(top=0.8)
-    ax.legend()
-    ax.set_xticks([])
-    ax.set_xlabel("")
-
-    print(config)
-
-    # result_id = 76
-    result_id = 229
-    # result_id = 291
-    idx_prototypes_bar_plot = 1
-
-    config, results_data = load_results(Path(f"../results/{result_id}"))
-    accuracies = results_data["accuracies"]
-    confusion_matrices = results_data["confusion_matrices"]
-
-    datasets = {dataset['name']: dataset for dataset in config['datasets']}
-
-    for m, few_shot_index in enumerate(few_shot_indices):
-        ax = axes[m]
-
-        models = {'chance': []}
-
-        for k, dataset in enumerate(config['datasets']):
-            models['chance'].append(chance_levels[dataset['name']])
-            for i, (model, model_accuracies) in enumerate(accuracies.items()):
-                if dataset['name'] in model_accuracies:
-                    if model not in models:
-                        models[model] = []
-                    items = sorted(model_accuracies[dataset['name']].items(), key=lambda x: x[0])
-                    x, y = zip(*items)
-                    mean, std = zip(*y)
-                    models[model].append(mean[m])
-
-        for k, model_name in enumerate(model_order):
-            acc = models[model_name]
-            if model_name in model_names_short:
-                color, hatch = markers_bars[model_name]
-                ax.bar([k * 0.35], np.mean(acc), 0.35, color=color, hatch=hatch,
-                       yerr=(np.std(acc) / np.sqrt(len(acc))), label=model_names_short[model_name])
-
-        ax.axhline(np.mean(models['chance']), linestyle="--", color="black", label="Average chance level")
-        ax.set_title(f"{few_shot_index}-shot")
-        if m == 0:
-            ax.set_ylabel("Accuracy")
-        ax.set_ylim(top=0.8)
-        ax.set_xticks([])
-        ax.set_xlabel("")
-
-    plt.tight_layout(.5)
-    # fig.suptitle("Few-shot accuracies on various datasets and models")
-    plt.savefig(f"../results/{result_id}/averaged_performances.svg", format="svg")
-    plt.show()
-
     # Dataset wise plot_vis
-    result_id = 299
+    # result_id = 299
+    result_id = 349
     idx_prototypes_bar_plot = 1
 
     config, results_data = load_results(Path(f"../results/{result_id}"))

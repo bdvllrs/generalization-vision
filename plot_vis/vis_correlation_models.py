@@ -41,7 +41,10 @@ corr_matrix_order = [
     "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
     "madry-imagenet_linf_4",
     "madry-imagenet_linf_8",
-    "virtex"
+    "virtex",
+    "ICMLM",
+    "TSM-visual",
+    "TSM-shared"
 ]
 
 if __name__ == '__main__':
@@ -49,7 +52,8 @@ if __name__ == '__main__':
     # result_id = 326  # cos
     # result_id = 330  # cos
     # result_id = 316  # t-test
-    result_id = 338  # t-test
+    # result_id = 344  # t-test
+    result_id = 367  # t-test
     idx_prototypes_bar_plot = 1
 
     dataset = "ImageNet"
@@ -123,31 +127,31 @@ if __name__ == '__main__':
     # plt.tight_layout(.5)
     # plt.savefig(f"../results/{result_id}/pca_rdms.eps", format="eps")
     # plt.show()
-    #
-    # figsize = 10
-    #
-    # mat = np.zeros((len(correlations), len(correlations)))
-    # # pval = np.zeros((len(significance), len(significance)))
-    # labels = []
-    #
-    # # Correlation between models
-    # for i, model_1 in enumerate(corr_matrix_order):
+
+
+    figsize = 10
+    mat = np.zeros((len(correlations), len(correlations)))
+    # pval = np.zeros((len(significance), len(significance)))
+    labels = []
+
+    # Correlation between models
+    for i, model_1 in enumerate(corr_matrix_order):
+        labels.append(model_names_short[model_1])
+        for j, model_2 in enumerate(corr_matrix_order):
+            corr = correlations[model_1][model_2]
+            mat[i, j] = corr
+    # for i, (model_1, corrs) in enumerate(sorted(correlations.items())):
     #     labels.append(model_names_short[model_1])
-    #     for j, model_2 in enumerate(corr_matrix_order):
-    #         corr = correlations[model_1][model_2]
+    #     for j, (model_2, corr) in enumerate(sorted(corrs.items())):
     #         mat[i, j] = corr
-    # # for i, (model_1, corrs) in enumerate(sorted(correlations.items())):
-    # #     labels.append(model_names_short[model_1])
-    # #     for j, (model_2, corr) in enumerate(sorted(corrs.items())):
-    # #         mat[i, j] = corr
-    # #         # pval = significance[model_1][model_2]
-    #
-    # plt.figure(figsize=(figsize, figsize))
-    # sn.heatmap(mat, annot=True, xticklabels=labels, yticklabels=labels)
-    # # plt.title("Pearson correlations between RDMs of vision and text models.")
-    # plt.tight_layout(pad=.5)
-    # plt.savefig(f"../results/{result_id}/plot_corr.pdf", format="pdf")
-    # plt.show()
+    #         # pval = significance[model_1][model_2]
+
+    plt.figure(figsize=(figsize, figsize))
+    sn.heatmap(mat, annot=True, xticklabels=labels, yticklabels=labels)
+    # plt.title("Pearson correlations between RDMs of vision and text models.")
+    plt.tight_layout(pad=.5)
+    plt.savefig(f"../results/{result_id}/plot_corr.pdf", format="pdf")
+    plt.show()
 
     # plt.figure(figsize=(figsize, figsize))
     # sn.heatmap(pval, annot=True, xticklabels=labels, yticklabels=labels)

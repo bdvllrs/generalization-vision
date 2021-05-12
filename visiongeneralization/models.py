@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy as np
 import torch
@@ -95,6 +96,26 @@ def get_model(model_name, device, keep_fc=False):
         if not keep_fc:
             model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
         model.to(device)
+        transform = get_imagenet_transform
+
+    elif model_name == "ICMLM":
+        model = resnet50(pretrained=False)
+        checkpoint = model_zoo.load_url("http://download.europe.naverlabs.com//ICMLM/icmlm-attfc_r50_coco_5K.pth",
+                                        map_location=torch.device('cpu'))
+        model.load_state_dict(checkpoint["cnn"], strict=False)
+        model = ModelEncapsulation(model, 2048)
+        if not keep_fc:
+            model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        model.to(device)
+        transform = get_imagenet_transform
+    elif "TSM" in model_name:
+        #todo
+        warnings.warn("No TSM backbone available. Loading vanilla resnet...")
+        resnet = resnet50(pretrained=True)
+        if not keep_fc:
+            resnet.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        model = ModelEncapsulation(resnet, 2048)
+        model = model.to(device)
         transform = get_imagenet_transform
     elif "madry" in model_name and model_name.replace("madry-", "") in madry_models:
         model = resnet50(pretrained=False)

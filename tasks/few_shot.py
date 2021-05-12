@@ -110,8 +110,9 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
-        "semi-supervised-YFCC100M",
-        "semi-weakly-supervised-instagram",
+        "ICMLM",
+        # "semi-supervised-YFCC100M",
+        # "semi-weakly-supervised-instagram",
         "geirhos-resnet50_trained_on_SIN",
         "geirhos-resnet50_trained_on_SIN_and_IN",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
