@@ -44,7 +44,7 @@ corr_matrix_order = [
     "virtex",
     "ICMLM",
     "TSM-visual",
-    "TSM-shared"
+    # "TSM-shared"
 ]
 
 if __name__ == '__main__':
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     # result_id = 330  # cos
     # result_id = 316  # t-test
     # result_id = 344  # t-test
-    result_id = 367  # t-test
+    result_id = 410  # t-test
     idx_prototypes_bar_plot = 1
 
     dataset = "ImageNet"
@@ -80,9 +80,18 @@ if __name__ == '__main__':
     # plt.show()
 
     # # tSNE
-    X_tsne = dim_reduced_features['tsne']
-    y_short = [model_names_short[name] for name in dim_reduced_features['labels']]
-    colors = [color_scheme[name] for name in dim_reduced_features['labels']]
+    X_tsne = []
+    y_short = []
+    colors = []
+    for feat, label in zip(dim_reduced_features['tsne'], dim_reduced_features['labels']):
+        if label in corr_matrix_order:
+            X_tsne.append(feat)
+            y_short.append(model_names_short[label])
+            colors.append(color_scheme[label])
+    X_tsne = np.vstack(X_tsne)
+    # X_tsne = dim_reduced_features['tsne']
+    # y_short = [ for name in ]
+    # colors = [ for name in dim_reduced_features['labels']]
 
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(1.5 * figsize, 0.8 * figsize))
     ax = axes[1]
@@ -94,8 +103,11 @@ if __name__ == '__main__':
     ax.set_aspect((x1 - x0) / (y1 - y0))
     ax.set_title("(b)")
     # plt.title("t-SNE of RDMs")
-
-    y, X = zip(*features.items())
+    y, X = [], []
+    for label, feat in features.items():
+        if label in corr_matrix_order:
+            X.append(feat)
+            y.append(label)
     y_short = [model_names_short[name] for name in y]
     colors = [color_scheme[name] for name in y]
     X = np.stack(X, axis=0)

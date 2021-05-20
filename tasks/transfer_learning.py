@@ -152,6 +152,8 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
+        "TSM-v",
+        "TSM-vat",
         "CLIP-RN50",
         "virtex",
         "BiT-M-R50x1",
@@ -164,7 +166,7 @@ if __name__ == '__main__':
         # "semi-weakly-supervised-instagram",
         "ICMLM",
         "geirhos-resnet50_trained_on_SIN_and_IN",
-        # "madry-imagenet_linf_4",
+        "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
     ]
 

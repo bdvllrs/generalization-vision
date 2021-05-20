@@ -6,10 +6,15 @@ import torch
 from matplotlib import pyplot as plt
 from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 from sklearn.decomposition import PCA
+from sklearn.metrics.pairwise import cosine_similarity
 
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import get_set_features, save_results, run
+from visiongeneralization.utils import get_set_features, save_results, run, get_rdm
+
+
+def cosine_metric(X, Y=None, dense_output=True):
+    return np.abs(cosine_similarity(X, Y, dense_output))
 
 
 def permute_labels(target, prediction, num_labels):
@@ -72,12 +77,16 @@ def main(config, acc):
                         # Define class prototypes
                         all_features, labels = get_set_features(model, dataset_test, device,
                                                                 batch_size=dataset['batch_size'],
-                                                                normalize_feature=False)
+
+                                                              normalize_feature=False)
+                        # plt.hist(all_features.flatten())
+                        # plt.hist(np.random.randn(*all_features.shape).flatten())
+                        # plt.show()
                         clustering_algorithm = SpectralClustering(n_clusters=len(class_names),
-                                                                       affinity="cosine",
+                                                                       affinity="precomputed",
                                                                        # linkage="average"
                                                                   )
-                        predicted_labels = clustering_algorithm.fit_predict(all_features)
+                        predicted_labels = clustering_algorithm.fit_predict(cosine_metric(all_features))
                         # plot pca of the features
                         # label2color = ["xkcd:light blue", "xkcd:dark blue", "xkcd:indigo", "black","xkcd:orange",
                         #                "xkcd:puce", "xkcd:light red", "xkcd:dark red",
@@ -114,6 +123,8 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
+        "TSM-vat",
+        "TSM-v",
         "ICMLM",
         "RN50",
         "CLIP-RN50",
@@ -123,7 +134,7 @@ if __name__ == '__main__':
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
         # "semi-supervised-YFCC100M",
         # "semi-weakly-supervised-instagram",
-        # "madry-imagenet_linf_4",
+        "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
         "geirhos-resnet50_trained_on_SIN",
         "geirhos-resnet50_trained_on_SIN_and_IN",
@@ -131,8 +142,8 @@ if __name__ == '__main__':
     # Dataset to test on
     datasets = [
         # {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
-        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
+        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
         {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/StreetViewHouseNumbers/format2"},

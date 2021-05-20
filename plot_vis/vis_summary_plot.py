@@ -18,7 +18,9 @@ model_order = list(reversed(["BiT-M-R50x1", "geirhos-resnet50_trained_on_SIN",
                "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "RN50", "madry-imagenet_l2_3_0",
                "madry-imagenet_linf_4",
                "madry-imagenet_linf_8",
-               "CLIP-RN50", "virtex", "ICMLM",
+               "CLIP-RN50", "virtex", "TSM-v",
+                             # "TSM-vat",
+                             "ICMLM"
                # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
                ]))
 
@@ -27,9 +29,9 @@ dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNu
 few_shot_indices = [1, 5, 10]
 
 if __name__ == '__main__':
-    result_id_few_shot = 345
-    result_id_clustering = 349
-    result_id_transfer_learning = 353
+    result_id_few_shot = 370
+    result_id_clustering = 402
+    result_id_transfer_learning = 372
 
     n_cols = 2 + len(few_shot_indices)
     n_rows = 1
@@ -161,7 +163,7 @@ if __name__ == '__main__':
 
     # fig.subplots_adjust(bottom=0.3, wspace=0.33)
 
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=6)
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7)
     # fig.legend()
     plt.tight_layout(pad=.5)
     # fig.suptitle("Few-shot accuracies on various datasets and models")

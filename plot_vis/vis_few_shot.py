@@ -6,7 +6,7 @@ from utils import dataset_names_short, model_names_short, markers, chance_levels
 from visiongeneralization.utils import load_results
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
-model_order = ["CLIP-RN50", "virtex", "ICMLM", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
+model_order = ["CLIP-RN50", "virtex", "ICMLM", "TSM-v", "TSM-vat", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
                "geirhos-resnet50_trained_on_SIN_and_IN",
                "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
                "madry-imagenet_linf_4",
@@ -15,11 +15,11 @@ model_order = ["CLIP-RN50", "virtex", "ICMLM", "BiT-M-R50x1", "RN50", "geirhos-r
                ]
 
 if __name__ == '__main__':
-    # result_id = 76
     # result_id = 168
     # result_id = 185
     # result_id = 229
-    result_id = 345
+    # result_id = 345
+    result_id = 370
     # result_id = 291
     idx_prototypes_bar_plot = 1
 

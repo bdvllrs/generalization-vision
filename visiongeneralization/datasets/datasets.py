@@ -6,9 +6,7 @@ import torch
 import torchvision
 import torchvision.datasets
 from PIL import Image as Image
-from natsort import natsorted
 from scipy.io import loadmat
-from torchvision import transforms as transforms
 from torchvision.datasets import MNIST, FashionMNIST, CIFAR10, CIFAR100, ImageNet
 
 from visiongeneralization.datasets.aircraft import FGVCAircraft
@@ -420,9 +418,11 @@ def get_dataset(dataset, transform, data_augment=False):
                                 train=False, transform=transform(32, False))
         class_names = [f"a {class_name}" for class_name in map(lambda x: x.lower(), dataset_test.classes)]
     elif dataset['name'] == "ImageNet":
-        dataset_train = ImageNet(root=dataset["root_dir"], split='train',
+        dataset_train = ImageNet(root=dataset["root_dir"],
+                                 split='train',
                                  transform=transform(256, data_augment))
-        dataset_test = ImageNet(root=dataset["root_dir"], split='val',
+        dataset_test = ImageNet(root=dataset["root_dir"],
+                                split='val',
                                 transform=transform(256, False))
         class_names = [f"a {class_name}" for class_name in
                        map(lambda x: ', '.join(x[:2]).lower(), dataset_test.classes)]

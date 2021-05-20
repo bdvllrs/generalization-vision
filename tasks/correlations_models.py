@@ -74,17 +74,19 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
 
             # Compute correlations between all models
             for model_1, rdm_model_1 in feature_cache.items():
-                correlations[model_1] = {}
-                significance[model_1] = {}
-                for model_2, rdm_model_2 in feature_cache.items():
-                    if rda_correlation_type == "pearson":
-                        r, p = scipy.stats.pearsonr(rdm_model_1, rdm_model_2)
-                    elif rda_correlation_type == "spearman":
-                        r, p = scipy.stats.spearmanr(rdm_model_1, rdm_model_2)
-                    elif rda_correlation_type == "kendall":
-                        r, p = scipy.stats.kendalltau((rdm_model_1, rdm_model_2))
-                    correlations[model_1][model_2] = r
-                    significance[model_1][model_2] = p
+                if model_1 in model_names:
+                    correlations[model_1] = {}
+                    significance[model_1] = {}
+                    for model_2, rdm_model_2 in feature_cache.items():
+                        if model_2 in model_names:
+                            if rda_correlation_type == "pearson":
+                                r, p = scipy.stats.pearsonr(rdm_model_1, rdm_model_2)
+                            elif rda_correlation_type == "spearman":
+                                r, p = scipy.stats.spearmanr(rdm_model_1, rdm_model_2)
+                            elif rda_correlation_type == "kendall":
+                                r, p = scipy.stats.kendalltau((rdm_model_1, rdm_model_2))
+                            correlations[model_1][model_2] = r
+                            significance[model_1][model_2] = p
 
         # Compute UMAP and TSNE projections
         y, X = zip(*feature_cache.items())
@@ -115,10 +117,10 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
 
 
 if __name__ == '__main__':
-    device = "cuda:2" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     parser = argparse.ArgumentParser(description='Correlations between models.')
-    parser.add_argument('--load_results', default=344, type=int,
+    parser.add_argument('--load_results', default=367, type=int,
                         help='Id of a previous experiment to continue.')
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
@@ -134,7 +136,7 @@ if __name__ == '__main__':
     # Models to test
     model_names = [
         "TSM-visual",
-        "TSM-shared",
+        # "TSM-shared",
         "ICMLM",
         "GPT2",
         "BERT",

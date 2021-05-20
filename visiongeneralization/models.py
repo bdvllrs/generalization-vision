@@ -1,8 +1,10 @@
 import os
-import warnings
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 
 import numpy as np
 import torch
+import tensorflow as tf
 from PIL import Image as Image
 from robustness.imagenet_models import resnet50
 from torch.utils import model_zoo
@@ -11,6 +13,13 @@ from transformers import AutoModelWithLMHead, AutoTokenizer, pipeline
 
 import visiongeneralization.clip as clip
 from .bit_model import KNOWN_MODELS as BiT_MODELS
+
+# tf.config.experimental.set_memory_growth(0.75)
+for gpu in tf.config.list_physical_devices('GPU'):
+    # tf.config.experimental.set_virtual_device_configuration(
+    #     gpu,
+    #     [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+    tf.config.experimental.set_memory_growth(gpu, True)
 
 
 class ModelEncapsulation(torch.nn.Module):
@@ -70,6 +79,40 @@ class BERTModel(torch.nn.Module):
         return torch.tensor(embedding)[:, class_token_position + 1]  # +1 for start token
 
 
+class TSMModel(torch.nn.Module):
+    def __init__(self, device, mode="v"):
+        super(TSMModel, self).__init__()
+        if mode == "visual":
+            mode = "v"
+        assert mode in ["v", "va", "vat"]
+        if mode == "v":
+            mode = "before_head"
+
+        self.out_dim = 0
+        if mode == "before_head":
+            self.out_dim = 2048
+        elif mode == "va":
+            self.out_dim = 512
+        elif mode == "vat":
+            self.out_dim = 256
+
+        self.has_text_encoder = False
+        self.has_image_encoder = True
+
+        import tensorflow_hub as hub
+
+        self.module = hub.load("https://tfhub.dev/deepmind/mmv/tsm-resnet50/1")
+        self.device = device
+        self.mode = mode
+
+    def encode_image(self, image):
+        with tf.device('/device:GPU:0'):
+            input_image = image.permute(0, 2, 3, 1).unsqueeze(1).detach().cpu().numpy()
+            input_image = input_image.astype(np.float32)
+            result = self.module.signatures['video'](tf.constant(tf.cast(input_image, dtype=tf.float32)))
+            return torch.from_numpy(result[self.mode].numpy()).to(self.device)
+
+
 def get_model(model_name, device, keep_fc=False):
     if "CLIP" in model_name and model_name.replace("CLIP-", "") in clip_models:
         model, transformation = clip.load(model_name.replace("CLIP-", ""), device=device, jit=False)
@@ -109,14 +152,9 @@ def get_model(model_name, device, keep_fc=False):
         model.to(device)
         transform = get_imagenet_transform
     elif "TSM" in model_name:
-        #todo
-        warnings.warn("No TSM backbone available. Loading vanilla resnet...")
-        resnet = resnet50(pretrained=True)
-        if not keep_fc:
-            resnet.fc = torch.nn.Identity()  # remove last linear layer before softmax function
-        model = ModelEncapsulation(resnet, 2048)
-        model = model.to(device)
-        transform = get_imagenet_transform
+        mode = model_name.split("-")[1]
+        model = TSMModel(device, mode)
+        transform = lambda x, y: get_imagenet_transform(x, y, False)
     elif "madry" in model_name and model_name.replace("madry-", "") in madry_models:
         model = resnet50(pretrained=False)
         checkpoint = torch.load(os.path.join(madry_model_folder, model_name.replace("madry-", "") + ".pt"),
@@ -190,7 +228,8 @@ madry_models = ["imagenet_l2_3_0", "imagenet_linf_4", "imagenet_linf_8"]
 
 imagenet_norm_mean, imagenet_norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
-def get_imagenet_transform(img_size=256, augmentation=False):
+
+def get_imagenet_transform(img_size=256, augmentation=False, normalize=True):
     img_size = 256  # force full size
     img_size_resize = img_size + 20 if augmentation and img_size > 128 else img_size
     transformations = [
@@ -203,8 +242,10 @@ def get_imagenet_transform(img_size=256, augmentation=False):
 
     transformations.extend([
         lambda image: image.convert("RGB"),
-        transforms.ToTensor(),
-        transforms.Normalize(imagenet_norm_mean, imagenet_norm_std)
+        transforms.ToTensor()
     ])
+
+    if normalize:
+        transformations.append(transforms.Normalize(imagenet_norm_mean, imagenet_norm_std))
 
     return transforms.Compose(transformations)

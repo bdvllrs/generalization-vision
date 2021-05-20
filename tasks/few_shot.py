@@ -110,6 +110,8 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
+        "TSM-v",
+        "TSM-vat",
         "ICMLM",
         # "semi-supervised-YFCC100M",
         # "semi-weakly-supervised-instagram",

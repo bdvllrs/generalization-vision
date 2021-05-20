@@ -20,11 +20,16 @@ model_order = ["CLIP-RN50", "virtex", "ICMLM", "BiT-M-R50x1", "RN50", "geirhos-r
 if __name__ == '__main__':
     # result_id = 212
     # result_id = 328
-    result_id = 353
+    result_id = 372
     idx_prototypes_bar_plot = 1
 
     config, results_data = load_results(Path(f"../results/{result_id}"))
     checkpoint = results_data['checkpoint']
+    # _, results_data2 = load_results(Path(f"../results/406"))
+    # for item, dic in checkpoint.items():
+    #     checkpoint[item]["TSM-vat"]["FashionMNIST"] = results_data2['checkpoint'][item]["TSM-vat"]["FashionMNIST"]
+    #
+    # save_results(config["results_path"], config, checkpoint=checkpoint)
 
     # checkpoint = clip_paper_results
 
