@@ -10,6 +10,15 @@ from torch.utils import model_zoo
 from tqdm import tqdm
 
 
+def max_margin_loss(predictions, labels):
+    len_denom = predictions.size(1) - 1
+    margin = 1 - predictions.gather(1, labels.reshape(-1, 1)) + predictions
+    zero = torch.tensor(0.).to(labels.device)
+    # -1 to remove constant when pred[label] = pred[y]
+    loss = torch.max(margin, zero).sum(dim=1) - 1
+    return (loss / len_denom).mean()
+
+
 def plot_class_predictions(images, class_names, probs,
                            square_size=4, show_best_n_classes=5):
     """

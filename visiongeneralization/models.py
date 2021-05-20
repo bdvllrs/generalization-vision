@@ -38,6 +38,7 @@ class CLIPLanguageModel(ModelEncapsulation):
     def __init__(self, model, out_dim=None):
         super().__init__(model, out_dim)
 
+        self.text_out_dim = model.transformer.width
         self.has_text_encoder = True
 
     def encode_image(self, image):
@@ -56,6 +57,8 @@ class GPT2Model(torch.nn.Module):
         self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
+        self.text_out_dim = 2048
+
         self.has_text_encoder = True
         self.has_image_encoder = False
 
@@ -70,6 +73,8 @@ class BERTModel(torch.nn.Module):
         super().__init__()
 
         self.transformer_model = pipeline("feature-extraction", "bert-base-uncased")
+
+        self.text_out_dim = 2048
 
         self.has_text_encoder = True
         self.has_image_encoder = False
