@@ -3,7 +3,6 @@ import os
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL.ImageFile import ImageFile
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
@@ -46,16 +45,18 @@ def train_one_epoch(dataloader, model, lm_features, vision_to_text, optimizer, d
     return losses
 
 
-def val(dataloader, model, lm_features, vision_to_text, device):
+def val(dataloader, model, lm_features, vision_to_text, device, seen_labels):
     vision_to_text.eval()
     losses = []
     num_correct = 0
     num_total = 0
     with torch.no_grad():
         for step, (images, targets) in tqdm(enumerate(dataloader), total=len(dataloader)):
+            images, targets = images.to(device), targets.to(device)
             features_i = vision_to_text(model.encode_image(images).float())
             # compute compatibility
             scores = features_i @ lm_features.transpose(1, 0)
+            scores[:, seen_labels] = - torch.tensor(10000).float().to(device)
             predictions = torch.softmax(scores, dim=-1)
             loss = max_margin_loss(predictions, targets)
 
@@ -67,6 +68,7 @@ def val(dataloader, model, lm_features, vision_to_text, device):
 
 
 def train(dataset_train, dataset_val, model, lm_features, vision_to_text, optimizer, scheduler, device,
+          seen_labels,
           batch_size=64, num_epochs=100,
           num_workers=-1,
           **kwargs):
@@ -80,7 +82,8 @@ def train(dataset_train, dataset_val, model, lm_features, vision_to_text, optimi
         train_losses.extend(
             train_one_epoch(dataloader_train, model, lm_features, vision_to_text, optimizer, device,
                             **kwargs))
-        val_loss, val_acc = val(dataloader_val, model, lm_features, vision_to_text, device)
+        val_loss, val_acc = val(dataloader_val, model, lm_features, vision_to_text, device, seen_labels)
+        print(f"Val acc: {val_acc}")
         scheduler.step()
         val_losses.append(val_loss)
         val_accuracies.append(val_acc)
@@ -119,7 +122,7 @@ def main(config, checkpoint):
 
             # Import model
             model, transform = get_model(model_name, device)
-            assert model.has_vision_encoder
+            assert model.has_image_encoder
             model.eval()
 
             for dataset in datasets:
@@ -143,8 +146,10 @@ def main(config, checkpoint):
                 caption_prototype, class_token_position = caption_sentence_prototypes
                 # Add the classnames to the captions
                 captions = [caption_prototype.format(classname=classname) for classname in class_names]
-                language_features = lm_model.encode_text(captions, device,
-                                                               class_token_position + caption_class_location)
+                with torch.no_grad():
+                    language_features = lm_model.encode_text(captions, device,
+                                                             class_token_position + caption_class_location)
+                    language_features = language_features.to(device)
 
                 n_seen_classes = int(seen_prop * len(class_names))
                 print(f"{n_seen_classes} seen classes, {len(class_names) - n_seen_classes} unseen classes.")
@@ -155,18 +160,20 @@ def main(config, checkpoint):
                     "models": [],
                     "train_losses": [],
                     "val_losses": [],
-                    "val_acc": []
+                    "val_acc": [],
+                    "train_dataset_size": [],
+                    "test_dataset_size": []
                 }
 
                 for trial in range(n_trials):
                     labels = np.arange(len(class_names))
                     np.random.shuffle(labels)
                     # Randomly choose the seen/unseen labels
-                    seen_labels = labels[:n_seen_classes]
-                    unseen_labels = labels[n_seen_classes:]
+                    seen_labels = sorted(labels[:n_seen_classes])
+                    unseen_labels = sorted(labels[n_seen_classes:])
 
-                    dataset_train = filter_classes(dataset_train, seen_labels)
-                    dataset_test = filter_classes(dataset_test, unseen_labels)
+                    seen_dataset_train = filter_classes(dataset_train, seen_labels)
+                    unseen_dataset_test = filter_classes(dataset_test, unseen_labels)
 
                     # Define net parameters, optimizer, learning schedule
                     vision_to_text = torch.nn.Linear(model.out_dim, lm_model.text_out_dim, bias=False).to(device)
@@ -176,17 +183,19 @@ def main(config, checkpoint):
 
                     # train the linear probe
                     train_losses, val_losses, val_acc = train(
-                        dataset_train, dataset_test, model, language_features, vision_to_text,
-                        optimizer, scheduler, device, dataset['batch_size'], n_epochs,
+                        seen_dataset_train, unseen_dataset_test, model, language_features, vision_to_text,
+                        optimizer, scheduler, device, seen_labels, dataset['batch_size'], n_epochs,
                         n_workers
                     )
 
-                    trial_history['models'] = vision_to_text.state_dict()
-                    trial_history['train_losses'] = train_losses
-                    trial_history['val_losses'] = val_losses
-                    trial_history['val_acc'] = val_acc
-                    trial_history['seen_labels'] = seen_labels
-                    trial_history['unseen_labels'] = unseen_labels
+                    trial_history['models'].append(vision_to_text.state_dict())
+                    trial_history['train_losses'].append(train_losses)
+                    trial_history['val_losses'].append(val_losses)
+                    trial_history['val_acc'].append(val_acc)
+                    trial_history['seen_labels'].append(seen_labels)
+                    trial_history['unseen_labels'].append(unseen_labels)
+                    trial_history['train_dataset_size'].append(len(seen_dataset_train))
+                    trial_history['test_dataset_size'].append(len(unseen_dataset_test))
 
                 checkpoint['models'][model_name][dataset['name']] = trial_history['models']
                 checkpoint['train_losses'][model_name][dataset['name']] = trial_history['train_losses']
@@ -194,6 +203,8 @@ def main(config, checkpoint):
                 checkpoint['val_acc'][model_name][dataset['name']] = trial_history['val_acc']
                 checkpoint['seen_labels'][model_name][dataset['name']] = trial_history['seen_labels']
                 checkpoint['unseen_labels'][model_name][dataset['name']] = trial_history['unseen_labels']
+                checkpoint['train_dataset_size'][model_name][dataset['name']] = trial_history['train_dataset_size']
+                checkpoint['test_dataset_size'][model_name][dataset['name']] = trial_history['test_dataset_size']
                 print("Saving...")
                 save_results(config["results_path"], config, checkpoint=checkpoint)
 
@@ -222,9 +233,9 @@ if __name__ == '__main__':
                         help='Gamma for learning rate schedule.')
     parser.add_argument('--n_trials', default=10, type=int,
                         help='Number of trials for seen/unseen class selection.')
-    parser.add_argument('--seen_prop', default=0.8, type=int,
+    parser.add_argument('--seen_prop', default=0.7, type=int,
                         help='Proportion of seen classes compared to unseen classes.')
-    parser.add_argument('--n_epochs', default=150, type=int,
+    parser.add_argument('--n_epochs', default=20, type=int,
                         help='Number of epochs.')
     parser.add_argument('--n_workers', default=0, type=int,
                         help='Number of workers.')
@@ -277,7 +288,19 @@ if __name__ == '__main__':
         "lm": args.language_model,
         "n_trials": args.n_trials,
         "seen_prop": args.seen_prop,
+        "caption_sentence_prototypes": ("a photo of {classname}.", 3),
         "override_models": []
     }
 
-    run(main, config, load_results_id, checkpoint={})
+    checkpoint = {
+        "models": {},
+        "train_losses": {},
+        "val_losses": {},
+        "val_acc": {},
+        "seen_labels": {},
+        "unseen_labels": {},
+        "train_dataset_size": {},
+        "test_dataset_size": {}
+    }
+
+    run(main, config, load_results_id, checkpoint=checkpoint)

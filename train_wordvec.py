@@ -8,8 +8,8 @@ from sklearn.decomposition import PCA
 import numpy as np
 
 from skip_gram_model import SkipGramModel
-from visiongeneralization import get_prototypes
-from visiongeneralization import get_model
+from visiongeneralization.models import get_model
+from visiongeneralization.utils import get_prototypes
 from wiki_data_utils import Word2vecDataset
 
 class FrozenEmbeddings:
@@ -104,7 +104,6 @@ class Word2VecTrainer:
         self.skip_gram_model.to(self.device)
 
     def train(self):
-
         train_losses = []
         val_losses = []
         for iteration in range(self.iterations):

@@ -102,6 +102,8 @@ if __name__ == '__main__':
     y0, y1 = ax.get_ylim()
     ax.set_aspect((x1 - x0) / (y1 - y0))
     ax.set_title("(b)")
+    ax.set_xlabel("First component")
+    ax.set_ylabel("Second component")
     # plt.title("t-SNE of RDMs")
     y, X = [], []
     for label, feat in features.items():
@@ -122,6 +124,7 @@ if __name__ == '__main__':
     x0, x1 = ax.get_xlim()
     y0, y1 = ax.get_ylim()
     ax.set_aspect((x1 - x0) / (y1 - y0))
+    ax.set_ylabel("Cluster distances")
     plt.tight_layout(pad=1)
     plt.savefig(f"../results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms.svg", format="svg")
     plt.show()
@@ -141,29 +144,29 @@ if __name__ == '__main__':
     # plt.show()
 
 
-    figsize = 10
-    mat = np.zeros((len(correlations), len(correlations)))
-    # pval = np.zeros((len(significance), len(significance)))
-    labels = []
-
-    # Correlation between models
-    for i, model_1 in enumerate(corr_matrix_order):
-        labels.append(model_names_short[model_1])
-        for j, model_2 in enumerate(corr_matrix_order):
-            corr = correlations[model_1][model_2]
-            mat[i, j] = corr
-    # for i, (model_1, corrs) in enumerate(sorted(correlations.items())):
+    # figsize = 10
+    # mat = np.zeros((len(corr_matrix_order), len(corr_matrix_order)))
+    # # pval = np.zeros((len(significance), len(significance)))
+    # labels = []
+    #
+    # # Correlation between models
+    # for i, model_1 in enumerate(corr_matrix_order):
     #     labels.append(model_names_short[model_1])
-    #     for j, (model_2, corr) in enumerate(sorted(corrs.items())):
+    #     for j, model_2 in enumerate(corr_matrix_order):
+    #         corr = correlations[model_1][model_2]
     #         mat[i, j] = corr
-    #         # pval = significance[model_1][model_2]
-
-    plt.figure(figsize=(figsize, figsize))
-    sn.heatmap(mat, annot=True, xticklabels=labels, yticklabels=labels)
-    # plt.title("Pearson correlations between RDMs of vision and text models.")
-    plt.tight_layout(pad=.5)
-    plt.savefig(f"../results/{result_id}/plot_corr.pdf", format="pdf")
-    plt.show()
+    # # for i, (model_1, corrs) in enumerate(sorted(correlations.items())):
+    # #     labels.append(model_names_short[model_1])
+    # #     for j, (model_2, corr) in enumerate(sorted(corrs.items())):
+    # #         mat[i, j] = corr
+    # #         # pval = significance[model_1][model_2]
+    #
+    # plt.figure(figsize=(figsize, figsize))
+    # sn.heatmap(mat, annot=True, xticklabels=labels, yticklabels=labels)
+    # # plt.title("Pearson correlations between RDMs of vision and text models.")
+    # plt.tight_layout(pad=.5)
+    # plt.savefig(f"../results/{result_id}/plot_corr.pdf", format="pdf")
+    # plt.show()
 
     # plt.figure(figsize=(figsize, figsize))
     # sn.heatmap(pval, annot=True, xticklabels=labels, yticklabels=labels)

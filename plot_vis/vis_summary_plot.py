@@ -3,7 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils import markers_bars, model_names_short, chance_levels
+from utils import markers_bars, model_names_short, chance_levels, size_training_data
 from visiongeneralization.utils import load_results
 
 # model_order = ["CLIP-RN50", "virtex", "ICMLM", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
@@ -13,29 +13,50 @@ from visiongeneralization.utils import load_results
 #                "madry-imagenet_linf_8",
 #                # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
 #                ]
-model_order = list(reversed(["BiT-M-R50x1", "geirhos-resnet50_trained_on_SIN",
-               "geirhos-resnet50_trained_on_SIN_and_IN",
-               "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "RN50", "madry-imagenet_l2_3_0",
-               "madry-imagenet_linf_4",
-               "madry-imagenet_linf_8",
-               "CLIP-RN50", "virtex", "TSM-v",
-                             # "TSM-vat",
-                             "ICMLM"
-               # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
-               ]))
+model_order = list(reversed([
+    "CLIP-RN50",
+    "madry-imagenet_l2_3_0",
+    "madry-imagenet_linf_4",
+    "madry-imagenet_linf_8",
+    "TSM-v",
+    "BiT-M-R50x1",
+    "geirhos-resnet50_trained_on_SIN_and_IN",
+    "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+    "geirhos-resnet50_trained_on_SIN",
+    "RN50",
+    "virtex",
+    "ICMLM",
+    # "TSM-vat",
+    # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
+]))
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
 
 few_shot_indices = [1, 5, 10]
+figsize = 3
+
+result_id_few_shot = 370
+result_id_clustering = 402
+result_id_transfer_learning = 372
 
 if __name__ == '__main__':
-    result_id_few_shot = 370
-    result_id_clustering = 402
-    result_id_transfer_learning = 372
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figsize, figsize))
+    for k, model_name in enumerate(model_order):
+        color, hatch = markers_bars[model_name]
+        ax.bar([k * 0.35], size_training_data[model_name], 0.35, color=color, hatch=hatch, log=True,
+               label=model_names_short[model_name])
+    ax.set_xticks([])
+    ax.set_xlabel("")
+
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=2)
+    # fig.legend()
+    plt.tight_layout(pad=.5)
+    # fig.suptitle("Few-shot accuracies on various datasets and models")
+    plt.savefig(f"../results/{result_id_few_shot}/size_training_data.svg", format="svg")
+    plt.show()
 
     n_cols = 2 + len(few_shot_indices)
     n_rows = 1
-    figsize = 3
 
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 

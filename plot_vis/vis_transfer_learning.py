@@ -3,19 +3,18 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils import moving_average, markers, model_names_short, dataset_names_short, markers_bars, chance_levels, clip_paper_results
-from visiongeneralization.utils import load_results, save_results
+from utils import moving_average, markers, model_names_short, dataset_names_short, markers_bars, chance_levels
+from visiongeneralization.utils import load_results
 
 # dataset_order = ["CIFAR10", "CIFAR100", "Caltech101", "DTD", "FGVC-Aircraft", "Food101", "Flowers102",
 #                  "IIITPets", "SUN397", "StanfordCars", "Birdsnap"]
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
 
-model_order = ["CLIP-RN50", "virtex", "ICMLM", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
+model_order = ["CLIP-RN50", "virtex", "ICMLM", "TSM-v", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
                "geirhos-resnet50_trained_on_SIN_and_IN",
                "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
                "madry-imagenet_linf_4",
                "madry-imagenet_linf_8"]
-
 
 if __name__ == '__main__':
     # result_id = 212
@@ -70,7 +69,7 @@ if __name__ == '__main__':
                     y_train = checkpoint['val_losses'][model][dataset]
                     color, marker = markers[model]
                     ax.plot(y_train, color=color, linestyle=marker, label=model_names_short[model])
-        if k ==0:
+        if k == 0:
             ax.legend()
         name_dataset = dataset_names_short[dataset] if dataset in dataset_names_short else dataset
         ax.set_title(name_dataset)
@@ -99,14 +98,14 @@ if __name__ == '__main__':
     plt.tight_layout(pad=.5)
     plt.show()
 
-    n_rows = 1
-    n_cols = 6
+    n_rows = 2
+    n_cols = 3
     figsize = 3
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     for k, dataset in enumerate(dataset_order):
-        # i, j = k // n_cols, k % n_cols
-        ax = axes[k]
+        i, j = k // n_cols, k % n_cols
+        ax = axes[i, j]
         n_model = 0
         for model in model_order:
             if model in checkpoint['val_acc'].keys():
@@ -114,19 +113,18 @@ if __name__ == '__main__':
                     y_train = checkpoint['val_acc'][model][dataset]
                     color, hatch = markers_bars[model]
                     ax.bar([n_model * 0.35], y_train[-1], 0.35, color=color, hatch=hatch,
-                                 label=model_names_short[model])
+                           label=(model_names_short[model] if k == 0 else None))
                     n_model += 1
-        ax.axhline(chance_levels[dataset], linestyle="--", color="black", label="Chance level")
+        ax.axhline(chance_levels[dataset], linestyle="--", color="black", label=("Chance level") if k == 0 else None)
         if dataset == "StanfordCars":
             ax.set_ylim(top=0.1)
-        if k == 0:
-            ax.legend()
         name_dataset = dataset_names_short[dataset] if dataset in dataset_names_short else dataset
         ax.set_title(name_dataset)
         ax.set_xticks([])
         ax.set_xlabel("")
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7)
     plt.tight_layout(pad=.5)
-    plt.savefig(f"../results/{result_id}/val_acc.svg", format="svg")
+    plt.savefig(f"../results/{result_id}/transfer_learning_val_acc.svg", format="svg")
     plt.show()
 
     n_rows = 1
@@ -151,16 +149,17 @@ if __name__ == '__main__':
         if model in average_accuracy:
             color, hatch = markers_bars[model]
             ax.bar([n_model * 0.35], np.mean(average_accuracy[model]), 0.35,
-                   yerr=(np.std(average_accuracy[model]) / np.sqrt(len(average_accuracy[model]))), color=color, hatch=hatch,
+                   yerr=(np.std(average_accuracy[model]) / np.sqrt(len(average_accuracy[model]))), color=color,
+                   hatch=hatch,
                    label=model_names_short[model])
             n_model += 1
     ax.axhline(np.mean(list(chance_levels.values())), linestyle="--", color="black", label="Average chance level")
-    ax.legend()
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7)
     plt.tight_layout(pad=.5)
     ax.set_xticks([])
     ax.set_xlabel("")
-    plt.savefig(f"../results/{result_id}/val_acc_summary.svg", format="svg")
+    plt.savefig(f"../results/{result_id}/transfer_learning_val_acc_summary.svg", format="svg")
     plt.show()
 
-    print(config)
-    print(checkpoint)
+    # print(config)
+    # print(checkpoint)

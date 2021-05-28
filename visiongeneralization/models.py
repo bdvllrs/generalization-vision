@@ -57,7 +57,7 @@ class GPT2Model(torch.nn.Module):
         self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        self.text_out_dim = 2048
+        self.text_out_dim = 768
 
         self.has_text_encoder = True
         self.has_image_encoder = False

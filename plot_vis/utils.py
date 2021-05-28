@@ -212,3 +212,19 @@ clip_paper_results = {
         }
     }
 }
+
+size_training_data = {
+    "CLIP-RN50": 400e6,
+    "virtex": 120e3,
+    "ICMLM": 120e3,
+    "TSM-v": 136e6,
+    "TSM-visual": 136e6,
+    "RN50": 1.3e6,
+    "BiT-M-R50x1": 14e6,
+    "madry-imagenet_l2_3_0": 110 * 1.3e6,
+    "madry-imagenet_linf_4": 110 * 1.3e6,
+    "madry-imagenet_linf_8": 110 * 1.3e6,
+    "geirhos-resnet50_trained_on_SIN": 1.3e6,
+    "geirhos-resnet50_trained_on_SIN_and_IN": 2 * 1.3e6,
+    "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": 2 * 1.3e6,
+}

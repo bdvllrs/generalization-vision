@@ -6,7 +6,8 @@ import numpy as np
 from utils import markers_bars, dataset_names_short, model_names_short, chance_levels
 from visiongeneralization.utils import load_results
 
-model_order = ["CLIP-RN50", "virtex", "ICMLM", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
+model_order = ["CLIP-RN50", "virtex", "ICMLM", "TSM-v",
+               "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
                "geirhos-resnet50_trained_on_SIN_and_IN",
                "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
                "madry-imagenet_linf_4",
@@ -21,7 +22,7 @@ few_shot_indices = [1, 5, 10]
 if __name__ == '__main__':
     # Dataset wise plot_vis
     # result_id = 299
-    result_id = 349
+    result_id = 402
     idx_prototypes_bar_plot = 1
 
     config, results_data = load_results(Path(f"../results/{result_id}"))
@@ -45,15 +46,14 @@ if __name__ == '__main__':
             if dataset['name'] in model_accuracies and model in model_names_short:
                 y = model_accuracies[dataset['name']]
                 color, hatch = markers_bars[model]
-                ax.bar([l * 0.35], y, 0.35, color=color, hatch=hatch, label=model_names_short[model])
+                label = model_names_short[model] if k == 0 else None
+                ax.bar([l * 0.35], y, 0.35, color=color, hatch=hatch, label=label)
 
-        ax.axhline(chance_levels[dataset_name], linestyle="--", color="black", label="Chance level")
+        ax.axhline(chance_levels[dataset_name], linestyle="--", color="black", label=("Chance level" if k == 0 else None))
 
         # if dataset_name == "HouseNumbers":
         #     ax.set_ylim(top=0.35)
 
-        if k == 0:
-            ax.legend()
         ax.set_xticks([])
         ax.set_xlabel("")
         if dataset['name'] in dataset_names_short.keys():
@@ -66,6 +66,7 @@ if __name__ == '__main__':
             ax.set_ylabel("")
             ax.set_xlabel("")
     # fig.suptitle("Few-shot accuracies on various datasets and models")
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.1), ncol=7)
     plt.tight_layout(.5)
     plt.savefig(f"../results/{result_id}/clustering-acc.svg", format="svg")
     plt.show()

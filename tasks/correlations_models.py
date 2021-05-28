@@ -74,11 +74,11 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
 
             # Compute correlations between all models
             for model_1, rdm_model_1 in feature_cache.items():
-                if model_1 in model_names:
+                if model_1 in model_names or model_1.replace("_text", "") in model_names:
                     correlations[model_1] = {}
                     significance[model_1] = {}
                     for model_2, rdm_model_2 in feature_cache.items():
-                        if model_2 in model_names:
+                        if model_2 in model_names or model_2.replace("_text", "") in model_names:
                             if rda_correlation_type == "pearson":
                                 r, p = scipy.stats.pearsonr(rdm_model_1, rdm_model_2)
                             elif rda_correlation_type == "spearman":
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     parser = argparse.ArgumentParser(description='Correlations between models.')
-    parser.add_argument('--load_results', default=367, type=int,
+    parser.add_argument('--load_results', default=410, type=int,
                         help='Id of a previous experiment to continue.')
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
