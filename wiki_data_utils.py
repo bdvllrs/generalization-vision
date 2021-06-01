@@ -1,11 +1,41 @@
 import numpy as np
 import torch
+from tqdm import tqdm
+
+
+def resize_vocabulary(data, vocab_size=-1):
+    id2word = data.id2word.copy()
+    word_frequency = data.word_frequency.copy()
+    data.word_frequency = dict()
+    data.word2id = dict()
+    data.id2word = dict()
+    most_frequent_words, _ = list(zip(*sorted(word_frequency.items(), key=lambda a: a[1], reverse=True)))
+    vocabulary = most_frequent_words[:vocab_size]
+    freq_unk = 0
+    old2newid = {old: k for k, old in enumerate(vocabulary)}
+    for idx in vocabulary:
+        word = id2word[idx]
+        newidx = old2newid[idx]
+
+        data.word2id[word] = newidx
+        data.id2word[newidx] = word
+        data.word_frequency[newidx] = word_frequency[idx]
+    for idx in most_frequent_words[vocab_size:]:
+        freq_unk += word_frequency[idx]
+
+    data.word2id["<unk>"] = vocab_size
+    data.id2word[vocab_size] = "<unk>"
+    data.word_frequency[vocab_size] = freq_unk
+
+    data.negatives = []
+    data.initTableNegatives()
+    data.initTableDiscards()
 
 
 class DataReader:
     NEGATIVE_TABLE_SIZE = 1e8
 
-    def __init__(self, inputFileName, min_count):
+    def __init__(self, inputFileName, min_count, vocab_size=20_000):
 
         self.negatives = []
         self.discards = []
@@ -19,8 +49,31 @@ class DataReader:
 
         self.inputFileName = inputFileName
         self.read_words(min_count)
+        self.resize_vocabulary(vocab_size)
         self.initTableNegatives()
         self.initTableDiscards()
+
+    def resize_vocabulary(self, vocab_size):
+        id2word = self.id2word.copy()
+        word_frequency = self.word_frequency.copy()
+        self.word_frequency = dict()
+        self.word2id = dict()
+        self.id2word = dict()
+        most_frequent_words, _ = zip(sorted(word_frequency.items(), key=lambda a, b: b, reverse=True))
+        vocabulary = most_frequent_words[:vocab_size]
+        freq_unk = 0
+        for idx in vocabulary:
+            word = id2word[idx]
+
+            self.word2id[word] = idx
+            self.id2word[idx] = word
+            self.word_frequency[idx] = word_frequency[idx]
+        for idx in most_frequent_words[vocab_size:]:
+            freq_unk += word_frequency[idx]
+
+        self.word2id["<unk>"] = vocab_size
+        self.id2word[vocab_size] = "<unk>"
+        self.word_frequency[vocab_size] = freq_unk
 
     def read_words(self, min_count):
         word_frequency = dict()
@@ -74,28 +127,43 @@ class Word2vecDataset(torch.utils.data.Dataset):
     def __init__(self, data, window_size):
         self.data = data
         self.window_size = window_size
-        self.input_file = open(data.inputFileName, encoding="utf8")
+        self.input_file = open(data.inputFileName, "r", encoding="utf8")
+        print("Indexing dataset...")
+        self.positions = self.index_positions()
+        print("done.")
+
+    def index_positions(self):
+        positions = []
+        for k in tqdm(range(self.data.sentences_count)):
+        # for k in tqdm(range(1000)):
+            line_position = self.input_file.tell()
+            line = self.input_file.readline()
+            if len(line):
+                words = line.split()
+                if len(words) > 1:
+                    positions.append(line_position)
+        return positions
 
     def __len__(self):
-        return self.data.sentences_count
+        return len(self.positions)
 
     def __getitem__(self, idx):
-        while True:
-            line = self.input_file.readline()
-            if not line:
-                self.input_file.seek(0, 0)
-                line = self.input_file.readline()
+        position = self.positions[idx]
+        self.input_file.seek(position)
+        line = self.input_file.readline()
+        words = line.split()
+        word_ids = []
+        for w in words:
+            if w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]:
+                word_ids.append(self.data.word2id[w])
+            elif w not in self.data.word2id:
+                word_ids.append(self.data.word2id['<unk>'])
 
-            if len(line) > 1:
-                words = line.split()
+        boundary = np.random.randint(1, self.window_size)
+        result = [(u, v, self.data.getNegatives(v, 5)) for i, u in enumerate(word_ids) for j, v in
+                enumerate(word_ids[max(i - boundary, 0):i + boundary]) if u != v]
 
-                if len(words) > 1:
-                    word_ids = [self.data.word2id[w] for w in words if
-                                w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
-
-                    boundary = np.random.randint(1, self.window_size)
-                    return [(u, v, self.data.getNegatives(v, 5)) for i, u in enumerate(word_ids) for j, v in
-                            enumerate(word_ids[max(i - boundary, 0):i + boundary]) if u != v]
+        return result
 
     @staticmethod
     def collate(batches):

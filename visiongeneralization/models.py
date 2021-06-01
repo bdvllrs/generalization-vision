@@ -81,7 +81,7 @@ class BERTModel(torch.nn.Module):
 
     def encode_text(self, text, device, class_token_position=0):
         embedding = torch.tensor(self.transformer_model(text))
-        return torch.tensor(embedding)[:, class_token_position + 1]  # +1 for start token
+        return embedding[:, class_token_position + 1]  # +1 for start token
 
 
 class TSMModel(torch.nn.Module):
