@@ -1,5 +1,7 @@
 import os
 
+import gensim
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 
 import numpy as np
@@ -9,7 +11,7 @@ from PIL import Image as Image
 from robustness.imagenet_models import resnet50
 from torch.utils import model_zoo
 from torchvision import transforms as transforms
-from transformers import AutoModelWithLMHead, AutoTokenizer, pipeline
+from transformers import AutoModelWithLMHead, AutoTokenizer, BertModel
 
 import visiongeneralization.clip as clip
 from .bit_model import KNOWN_MODELS as BiT_MODELS
@@ -44,44 +46,49 @@ class CLIPLanguageModel(ModelEncapsulation):
     def encode_image(self, image):
         return self.module.encode_image(image)
 
-    def encode_text(self, text, device, class_token_position=0):
-        text = clip.tokenize(text).to(device)
-        return self.module.encode_text(text)
+    def encode_text(self, inputs, device, class_token_position=0):
+        return self.module.encode_text(inputs.to(device))
 
 
 class GPT2Model(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, version="small"):
         super().__init__()
 
-        self.transformer_model = AutoModelWithLMHead.from_pretrained("gpt2")
-        self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
-        self.tokenizer.pad_token = self.tokenizer.eos_token
-
-        self.text_out_dim = 768
+        if version == "small":
+            self.transformer_model = AutoModelWithLMHead.from_pretrained("gpt2")
+            self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        elif version == "medium":
+            self.transformer_model = AutoModelWithLMHead.from_pretrained("gpt2-medium")
+            self.tokenizer = AutoTokenizer.from_pretrained("gpt2-medium")
+        elif version == "large":
+            self.transformer_model = AutoModelWithLMHead.from_pretrained("gpt2-large")
+            self.tokenizer = AutoTokenizer.from_pretrained("gpt2-large")
+        else:
+            raise ValueError('This version of GPT2 is not supported')
 
         self.has_text_encoder = True
         self.has_image_encoder = False
 
-    def encode_text(self, text, device, class_token_position=0):
-        inputs = self.tokenizer(text, return_tensors="pt", padding=True)
+    def encode_text(self, inputs, device, class_token_position=0):
         hidden_states = self.transformer_model(**inputs, output_hidden_states=True)['hidden_states']
         return hidden_states[-1][:, class_token_position + 1]  # +1 for start token
 
 
 class BERTModel(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, version="base"):
         super().__init__()
 
-        self.transformer_model = pipeline("feature-extraction", "bert-base-uncased")
+        if version not in ["base", "large"]:
+            raise ValueError('This version of Bert is not supported')
 
-        self.text_out_dim = 2048
+        self.transformer_model = BertModel.from_pretrained(f"bert-{version}-uncased")
 
         self.has_text_encoder = True
         self.has_image_encoder = False
 
-    def encode_text(self, text, device, class_token_position=0):
-        embedding = torch.tensor(self.transformer_model(text))
-        return embedding[:, class_token_position + 1]  # +1 for start token
+    def encode_text(self, inputs, device, class_token_position=0):
+        hidden_states = self.transformer_model(**inputs, output_hidden_states=True)['hidden_states']
+        return hidden_states[-1][:, class_token_position + 1]  # +1 for start token
 
 
 class TSMModel(torch.nn.Module):
@@ -118,11 +125,59 @@ class TSMModel(torch.nn.Module):
             return torch.from_numpy(result[self.mode].numpy()).to(self.device)
 
 
+class SkipGramModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.SG_model = gensim.models.KeyedVectors.load_word2vec_format(
+            '/home/romain/W2V_evaluation/GoogleNews-vectors-negative300.bin.gz', binary=True)
+
+        self.has_text_encoder = True
+        self.has_image_encoder = False
+
+    def encode_text(self, text, device, class_token_position=0):
+        words = [sent.split()[class_token_position + 1] for sent in text]  # +1 for start token
+        embedding = [self.SG_model[word] for word in words]
+        return torch.tensor(embedding)
+
+
+class TransformerTokenizer:
+    available_models = [
+        "bert-base-uncased",
+        "bert-large-uncased",
+        "gpt2",
+        "gpt2-medium",
+        "gpt2-large"
+    ]
+
+    def __init__(self, model):
+        if model not in self.available_models:
+            raise ValueError("This Tokenizer is not available.")
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model)
+        self.tokenizer.eos_token = "<|endoftext|>"
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+
+    def __call__(self, text):
+        return self.tokenizer(text, return_tensors="pt", padding=True)
+
+
+def clip_tokenizer(text):
+    return clip.tokenize(text)
+
+
+def identity_tokenizer(text):
+    return text
+
+
 def get_model(model_name, device, keep_fc=False):
+    tokenizer = identity_tokenizer
+
     if "CLIP" in model_name and model_name.replace("CLIP-", "") in clip_models:
         model, transformation = clip.load(model_name.replace("CLIP-", ""), device=device, jit=False)
         model = CLIPLanguageModel(model, model.visual.output_dim)
         transform = lambda ims, augment: transformation
+        tokenizer = clip_tokenizer
     elif model_name == "RN50":
         resnet = resnet50(pretrained=True)
         if not keep_fc:
@@ -206,15 +261,29 @@ def get_model(model_name, device, keep_fc=False):
     elif model_name == "BERT":
         model = BERTModel()
         transform = lambda x, y: None
+        tokenizer = TransformerTokenizer("bert-base-uncased")
+    elif model_name == "BERT-large":
+        model = BERTModel("large")
+        transform = lambda x, y: None
+        tokenizer = TransformerTokenizer("bert-large-uncased")
     elif model_name == "GPT2":
         model = GPT2Model()
         transform = lambda x, y: None
+        tokenizer = TransformerTokenizer("gpt2")
+    elif model_name == "GPT2-medium":
+        model = GPT2Model("medium")
+        transform = lambda x, y: None
+        tokenizer = TransformerTokenizer("gpt2-medium")
+    elif model_name == "GPT2-large":
+        model = GPT2Model("large")
+        transform = lambda x, y: None
+        tokenizer = TransformerTokenizer("gpt2-large")
     elif model_name == "Word2Vec":
-        # TODO
-        raise ValueError(f"{model_name} is not a valid model name.")
+        model = SkipGramModel()
+        transform = lambda x, y: None
     else:
         raise ValueError(f"{model_name} is not a valid model name.")
-    return model, transform
+    return model, transform, tokenizer
 
 
 BiT_model_urls = {

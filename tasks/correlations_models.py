@@ -29,7 +29,7 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
         with torch.no_grad():
             for model_name in model_names:
                 # Import model
-                model, transform = get_model(model_name, device)
+                model, transform, tokenizer = get_model(model_name, device)
                 model.eval()
 
                 for dataset in datasets:
@@ -67,7 +67,8 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
                         caption_prototype, class_token_position = caption_sentence_prototypes
                         # Add the classnames to the captions
                         captions = [caption_prototype.format(classname=classname) for classname in class_names]
-                        model_language_features = model.encode_text(captions, device,
+                        inputs = tokenizer(captions)
+                        model_language_features = model.encode_text(inputs, device,
                                                                     class_token_position + caption_class_location)
                         rdm_model_language = squareform(get_rdm(model_language_features, metric=config["rdm_distance_metric"]), checks=False)
                         feature_cache[model_name + "_text"] = rdm_model_language
@@ -120,7 +121,7 @@ if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     parser = argparse.ArgumentParser(description='Correlations between models.')
-    parser.add_argument('--load_results', default=410, type=int,
+    parser.add_argument('--load_results', default=None, type=int,
                         help='Id of a previous experiment to continue.')
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
@@ -135,15 +136,15 @@ if __name__ == '__main__':
 
     # Models to test
     model_names = [
+        "BERT",
         "TSM-visual",
         # "TSM-shared",
         "ICMLM",
-        "GPT2",
-        "BERT",
         "CLIP-RN50",
         "RN50",
         "virtex",
         "BiT-M-R50x1",
+        "GPT2",
         "madry-imagenet_l2_3_0",
         "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",

@@ -70,7 +70,7 @@ class FrozenEmbeddings:
 
 
 class TextFrozenEmbeddings:
-    def __init__(self, model, device, emd_dimension=-1):
+    def __init__(self, model, tokenizer, device, emd_dimension=-1):
         self.model = model
         self.device = device
         self.frozen_words = np.load("frozen_words.npy")
@@ -78,7 +78,8 @@ class TextFrozenEmbeddings:
 
         self.vectors = {}
         for word in self.frozen_words:
-            self.vectors[word] = self.model.encode_text(f"a photo of a {word}", self.device, 3)[0].numpy()
+            inputs = tokenizer([f"a photo of a {word}"])
+            self.vectors[word] = self.model.encode_text(inputs, self.device, 3)[0].detach().cpu().numpy()
 
         if emb_dimension != -1:
             self.dim_reduction = PCA(n_components=emb_dimension)
@@ -207,6 +208,8 @@ if __name__ == '__main__':
                         help='Model to do.')
     parser.add_argument('--batch_size', default=8, type=int,
                         help='Batch size.')
+    parser.add_argument('--device', default="cuda", type=str,
+                        help='Device to use.')
     parser.add_argument('--nepochs', default=5, type=int,
                         help='Number of epochs.')
     parser.add_argument('--vocab_size', default=-1, type=int,
@@ -221,7 +224,7 @@ if __name__ == '__main__':
                         help='location to the data information.')
 
     args = parser.parse_args()
-    device = torch.device('cuda')
+    device = torch.device(args.device)
     model_name = args.model
     # input_file = "/mnt/SSD/datasets/enwiki/wiki.en.text"
     input_file = args.enwiki_location
@@ -238,9 +241,9 @@ if __name__ == '__main__':
     # dataset = None
 
     print(f"Computing model {model_name}.")
-    model, transform = get_model(model_name, device)
+    model, transform, tokenizer = get_model(model_name, device)
     if model_name in ['GPT2', 'BERT']:
-        frozen_embeddings = TextFrozenEmbeddings(model, device, emb_dimension)
+        frozen_embeddings = TextFrozenEmbeddings(model, tokenizer, device, emb_dimension)
     else:
         frozen_embeddings = FrozenEmbeddings(model, transform, args.imagenet_location,
                                              emb_dimension,

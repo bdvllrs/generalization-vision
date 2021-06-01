@@ -35,7 +35,7 @@ def main(config):
         for model_name in model_names:
             print(model_name)
             # Import model
-            model, transform = get_model(model_name, device, keep_fc=True)
+            model, transform, _ = get_model(model_name, device, keep_fc=True)
             model.eval()
 
             for dataset in datasets:

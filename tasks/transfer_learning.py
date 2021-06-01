@@ -89,7 +89,7 @@ def main(config, checkpoint):
                     checkpoint[item][model_name] = {}
 
             # Import model
-            model, transform = get_model(model_name, device)
+            model, transform, _ = get_model(model_name, device)
             model.eval()
 
             for dataset in datasets:

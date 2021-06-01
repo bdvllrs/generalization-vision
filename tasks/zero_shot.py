@@ -110,7 +110,7 @@ def main(config, checkpoint):
                     del checkpoint[item][model]
 
         # Import language model
-        lm_model, _ = get_model(lm_model_name, device)
+        lm_model, _, tokenizer = get_model(lm_model_name, device)
         assert lm_model.has_text_encoder
         lm_model.eval()
 
@@ -121,7 +121,7 @@ def main(config, checkpoint):
                     checkpoint[item][model_name] = {}
 
             # Import model
-            model, transform = get_model(model_name, device)
+            model, transform, _ = get_model(model_name, device)
             assert model.has_image_encoder
             model.eval()
 
@@ -147,7 +147,8 @@ def main(config, checkpoint):
                 # Add the classnames to the captions
                 captions = [caption_prototype.format(classname=classname) for classname in class_names]
                 with torch.no_grad():
-                    language_features = lm_model.encode_text(captions, device,
+                    inputs = tokenizer(captions)
+                    language_features = lm_model.encode_text(inputs, device,
                                                              class_token_position + caption_class_location)
                     language_features = language_features.to(device)
 

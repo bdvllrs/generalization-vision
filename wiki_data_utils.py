@@ -134,8 +134,8 @@ class Word2vecDataset(torch.utils.data.Dataset):
 
     def index_positions(self):
         positions = []
-        for k in tqdm(range(self.data.sentences_count)):
-        # for k in tqdm(range(1000)):
+        # for k in tqdm(range(self.data.sentences_count)):
+        for k in tqdm(range(1000)):
             line_position = self.input_file.tell()
             line = self.input_file.readline()
             if len(line):

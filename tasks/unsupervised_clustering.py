@@ -55,7 +55,7 @@ def main(config, acc):
         with torch.no_grad():
             for model_name in model_names:
                 # Import model
-                model, transform = get_model(model_name, device)
+                model, transform, _ = get_model(model_name, device)
                 model.eval()
 
                 # initialize results dict

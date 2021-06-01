@@ -40,7 +40,7 @@ def main(config, accuracies, confusion_matrices):
                     confusion_matrices[model_name] = dict()
 
                 # Import model
-                model, transform = get_model(model_name, device)
+                model, transform, _ = get_model(model_name, device)
                 model.eval()
 
                 for dataset in datasets:
