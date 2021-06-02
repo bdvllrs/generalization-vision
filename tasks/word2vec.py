@@ -1,18 +1,24 @@
 import argparse
+import logging
 
+import gensim.models
 import numpy as np
 import torch
-import torch.optim as optim
+from gensim.models import Word2Vec
+from gensim.models.callbacks import CallbackAny2Vec, PerplexityMetric
 from nltk.corpus import wordnet as wn
 from sklearn.decomposition import PCA
-from torch.utils.data import DataLoader
 from torchvision.datasets import ImageNet
-from tqdm import tqdm
 
-from skip_gram_model import SkipGramModel
 from visiongeneralization.models import get_model
+from visiongeneralization.text_data_utils import resize_vocabulary
 from visiongeneralization.utils import get_set_features
-from wiki_data_utils import Word2vecDataset, resize_vocabulary
+
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+
+
+def vocab_trim_rule(word, count, min_count):
+    return gensim.utils.RULE_KEEP
 
 
 class FrozenEmbeddings:
@@ -73,123 +79,47 @@ class TextFrozenEmbeddings:
     def __init__(self, model, tokenizer, device, emd_dimension=-1):
         self.model = model
         self.device = device
-        self.frozen_words = np.load("frozen_words.npy")
+        self.frozen_words = np.load("../frozen_words.npy")
         self.emb_dimension = emd_dimension
 
-        self.vectors = {}
+        self.vocabulary = {}
         for word in self.frozen_words:
             inputs = tokenizer([f"a photo of a {word}"])
-            self.vectors[word] = self.model.encode_text(inputs, self.device, 3)[0].detach().cpu().numpy()
+            self.vocabulary[word] = self.model.encode_text(inputs, self.device, 3)[0].detach().cpu().numpy()
 
         if emb_dimension != -1:
             self.dim_reduction = PCA(n_components=emb_dimension)
             print("Learning projection for PCA...")
-            self.dim_reduction.fit(np.vstack(list(self.vectors.values())))
+            self.dim_reduction.fit(np.vstack(list(self.vocabulary.values())))
             print("done.")
 
     def get_embedding(self, name):
         if name in self.frozen_words:
             if self.emb_dimension == -1:
-                return self.vectors[name]
+                return self.vocabulary[name]
             else:
-                return self.dim_reduction.transform(np.expand_dims(self.vectors[name], 0))[0]
+                return self.dim_reduction.transform(np.expand_dims(self.vocabulary[name], 0))[0]
         return None
 
 
-class Word2VecTrainer:
-    def __init__(self, data, output_file, device, emb_dimension=100, batch_size=16, iterations=3,
-                 initial_lr=0.001, predefined_embeddings=None):
+class SaveModelCallback(CallbackAny2Vec):
+    def __init__(self, save_dir, model_name):
+        super(SaveModelCallback, self).__init__()
+        self.save_dir = save_dir
+        self.model_name = model_name
+        self.losses = []
+        self.n_epoch = 0
 
-        self.use_cuda = torch.cuda.is_available()
-        self.device = device
+    def on_epoch_begin(self, model):
+        print(f"Start epoch {self.n_epoch}")
 
-        self.output_file_name = output_file
-        self.emb_dimension = emb_dimension
-        frozen_embeddings = []
-        frozen_embedding_id = []
-        frozen_words = []
-        if predefined_embeddings is not None:
-            for word, k in self.data.word2id.items():
-                embedding = predefined_embeddings.get_embedding(word)
-                if embedding is not None:
-                    if self.emb_dimension == -1:
-                        self.emb_dimension = embedding.shape[0]
-                    frozen_embeddings.append(embedding)
-                    frozen_embedding_id.append(k)
-                    frozen_words.append(word)
-
-            self.frozen_embeddings = torch.from_numpy(np.stack(frozen_embeddings))
-            self.frozen_embedding_id = torch.tensor(frozen_embedding_id)
-        else:
-            self.frozen_embeddings, self.frozen_embedding_id = None, None
-
-        resize_vocabulary(data, vocab_size, frozen_words)
-        dataset = Word2vecDataset(data, window_size, input_file)
-        self.data = dataset.data
-
-        self.emb_size = len(self.data.word2id)
-
-        self.dataloader = DataLoader(dataset, batch_size=batch_size,
-                                     shuffle=False, num_workers=0, pin_memory=True, collate_fn=dataset.collate)
-
-        self.batch_size = batch_size
-        self.iterations = iterations
-        self.initial_lr = initial_lr
-        self.skip_gram_model = SkipGramModel(self.emb_size, self.emb_dimension, self.frozen_embeddings,
-                                             self.frozen_embedding_id)
-
-        self.skip_gram_model.to(self.device)
-
-    def train(self):
-        train_losses = []
-        val_losses = []
-        params = [p for p in self.skip_gram_model.parameters() if p.requires_grad]
-        optimizer = optim.SparseAdam(params, lr=self.initial_lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
-
-        for iteration in range(self.iterations):
-            print("\n\n\nIteration: " + str(iteration + 1))
-            train_items = 0.8 * len(self.dataloader)
-            running_loss = 0.0
-            val_loss = []
-            self.skip_gram_model.train()
-            for i, sample_batched in enumerate(tqdm(self.dataloader)):
-                if len(sample_batched[0]) > 1:
-                    pos_u = sample_batched[0].to(self.device)
-                    pos_v = sample_batched[1].to(self.device)
-                    neg_v = sample_batched[2].to(self.device)
-
-                    # train
-                    if i < train_items:
-                        optimizer.zero_grad()
-                        loss = self.skip_gram_model(pos_u, pos_v, neg_v)
-                        loss.backward()
-                        optimizer.step()
-
-                        train_losses.append(loss.detach().item())
-                        running_loss = running_loss * 0.9 + loss.item() * 0.1
-                        if i > 0 and i % 500 == 0:
-                            print(" Loss: " + str(running_loss))
-                    # test
-                    else:
-                        if i == train_items:
-                            self.skip_gram_model.eval()
-                            print("EVAL")
-
-                        with torch.no_grad():
-                            loss = self.skip_gram_model(pos_u, pos_v, neg_v)
-                            val_loss.append(loss.item())
-            scheduler.step()
-            val_losses.append(np.mean(val_loss))
-            print("Last train BPC:", train_losses[-1])
-            print("Val BPC:", val_losses[-1])
-
-            np.save(self.output_file_name.replace(".vec", "_losses.npy"), {
-                "train": train_losses,
-                "val": val_losses
-            })
-
-            self.skip_gram_model.save_embedding(self.data.id2word, self.output_file_name)
+    def on_epoch_end(self, model):
+        self.losses.append(model.get_latest_training_loss())
+        loss = self.losses[-1] if len(self.losses) == 1 else self.losses[-1] - self.losses[-2]
+        print("Loss:", loss)
+        model.wv.save_word2vec_format(f"{self.save_dir}/out_{self.model_name.replace('/', '_')}.vec", binary=True)
+        np.save(f"{self.save_dir}/losses_{self.model_name.replace('/', '_')}.npy", self.losses)
+        self.n_epoch += 1
 
 
 if __name__ == '__main__':
@@ -223,6 +153,8 @@ if __name__ == '__main__':
                         help='Size of the embedding.')
     parser.add_argument('--enwiki_location', type=str,
                         help='Location to the enwiki model.')
+    parser.add_argument('--enwiki_val_location', type=str,
+                        help='Location to the enwiki model.')
     parser.add_argument('--imagenet_location', type=str,
                         help='location to imagenet dataset.')
     parser.add_argument('--data_location', type=str,
@@ -233,16 +165,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     device = torch.device(args.device)
     model_name = args.model
-    # input_file = "/mnt/SSD/datasets/enwiki/wiki.en.text"
     input_file = args.enwiki_location
     min_count = 12
     window_size = 5
     emb_dimension = args.emb_dimension
     vocab_size = args.vocab_size
-
-    data = np.load(args.data_location, allow_pickle=True).item()
-
-    # dataset = None
 
     print(f"Computing model {model_name}.")
     model, transform, tokenizer = get_model(model_name, device)
@@ -253,9 +180,42 @@ if __name__ == '__main__':
                                              emb_dimension,
                                              device)
 
-    w2v = Word2VecTrainer(data, f"{args.save_dir}/wordvectors/out_{model_name.replace('/', '_')}.vec", device,
-                          iterations=args.nepochs,
-                          batch_size=args.batch_size,
-                          emb_dimension=emb_dimension,
-                          predefined_embeddings=frozen_embeddings)
-    w2v.train()
+    data = np.load(args.data_location, allow_pickle=True).item()
+
+    ntokens_train = 2227749224
+    ntokens_val = 372710618
+    # with open(input_file, "r", encoding="utf8") as wiki_file:
+    #     train_split = int(0.8 * data.sentences_count)
+    #     with open("/mnt/SSD/datasets/enwiki/wiki.en.train.text", "w", encoding="utf8") as train_file:
+    #         for k in range(train_split):
+    #             line = wiki_file.readline()
+    #             ntokens_train += len(line.split(" "))
+    #             train_file.write(line)
+    #     with open("/mnt/SSD/datasets/enwiki/wiki.en.val.text", "w", encoding="utf8") as val_file:
+    #         for k in range(train_split, data.sentences_count):
+    #             line = wiki_file.readline()
+    #             ntokens_val += len(line.split(" "))
+    #             val_file.write(line)
+    # print("ntokens_train", ntokens_train)
+    # print("ntokens_val", ntokens_val)
+
+    resize_vocabulary(data, vocab_size)
+
+    model = Word2Vec(min_count=5, window=5, vector_size=emb_dimension, workers=16, sg=1)
+
+    model.build_vocab([[word] for word in data.word2id.keys()], trim_rule=vocab_trim_rule)
+    model.build_vocab([[word] for word in frozen_embeddings.vocabulary.keys()], update=True, trim_rule=vocab_trim_rule)
+
+    # freeze the vocab of the frozen embeddings.
+    model.wv.vectors_lockf = np.ones(model.wv.vectors.shape[0])
+    for k, word in enumerate(model.wv.index_to_key):
+        if word in frozen_embeddings.vocabulary:
+            model.wv.vectors_lockf[k] = 0
+
+    print("Start training...")
+    model.train(corpus_file=input_file, total_words=ntokens_train, epochs=5, compute_loss=True,
+                callbacks=[
+                    SaveModelCallback(args.save_dir, model_name),
+                    # PerplexityMetric(args.enwiki_val_location, 'shell')
+                ])
+    model.wv.save_word2vec_format(f"{args.save_dir}/out_{model_name.replace('/', '_')}.vec", binary=True)

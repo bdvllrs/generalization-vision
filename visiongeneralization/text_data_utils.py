@@ -1,12 +1,11 @@
 import numpy as np
-import torch
-from tqdm import tqdm
 
 
 def resize_vocabulary(data, vocab_size=-1, additional_vocab=None):
     id2word = data.id2word.copy()
     word2id = data.word2id.copy()
     vocab_size = vocab_size if vocab_size != -1 else len(id2word)
+    additional_vocab = [] if additional_vocab is None else additional_vocab
     word_frequency = data.word_frequency.copy()
     data.word_frequency = dict()
     data.word2id = dict()
@@ -22,20 +21,19 @@ def resize_vocabulary(data, vocab_size=-1, additional_vocab=None):
         data.word2id[word] = newidx
         data.id2word[newidx] = word
         data.word_frequency[newidx] = word_frequency[idx]
-    if additional_vocab is not None:
-        for k, word in enumerate(additional_vocab):
-            idx = word2id[word]
-            newidx = vocab_size + k
+    for k, word in enumerate(additional_vocab):
+        idx = word2id[word]
+        newidx = vocab_size + k
 
-            data.word2id[word] = newidx
-            data.id2word[newidx] = word
-            data.word_frequency[newidx] = word_frequency[idx]
-    for idx in most_frequent_words[vocab_size:]:
-        freq_unk += word_frequency[idx]
-
-    data.word2id["<unk>"] = vocab_size + len(additional_vocab)
-    data.id2word[vocab_size + len(additional_vocab)] = "<unk>"
-    data.word_frequency[vocab_size + len(additional_vocab)] = freq_unk
+        data.word2id[word] = newidx
+        data.id2word[newidx] = word
+        data.word_frequency[newidx] = word_frequency[idx]
+    # for idx in most_frequent_words[vocab_size:]:
+    #     freq_unk += word_frequency[idx]
+    #
+    # data.word2id["<unk>"] = vocab_size + len(additional_vocab)
+    # data.id2word[vocab_size + len(additional_vocab)] = "<unk>"
+    # data.word_frequency[vocab_size + len(additional_vocab)] = freq_unk
 
     data.negatives = []
     data.initTableNegatives()
@@ -131,57 +129,3 @@ class DataReader:
         if len(response) != size:
             return np.concatenate((response, self.negatives[0:self.negpos]))
         return response
-
-
-class Word2vecDataset(torch.utils.data.Dataset):
-    def __init__(self, data, window_size, inputFileName):
-        self.data = data
-        self.window_size = window_size
-        # self.input_file = open(inputFileName, "r", encoding="utf8")
-        self.input_file = inputFileName
-        print("Indexing dataset...")
-        self.positions = self.index_positions()
-        print("done.")
-
-    def index_positions(self):
-        positions = []
-        with open(self.input_file, "r", encoding="utf8") as f:
-            for k in tqdm(range(self.data.sentences_count)):
-            # for k in tqdm(range(1000)):
-                line_position = f.tell()
-                line = f.readline()
-                if len(line):
-                    words = line.split()
-                    if len(words) > 1:
-                        positions.append(line_position)
-        return positions
-
-    def __len__(self):
-        return len(self.positions)
-
-    def __getitem__(self, idx):
-        position = self.positions[idx]
-        with open(self.input_file, "r", encoding="utf8") as f:
-            f.seek(position)
-            line = f.readline()
-        words = line.split()
-        word_ids = []
-        for w in words:
-            if w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]:
-                word_ids.append(self.data.word2id[w])
-            elif w not in self.data.word2id:
-                word_ids.append(self.data.word2id['<unk>'])
-
-        boundary = np.random.randint(1, self.window_size)
-        result = [(u, v, self.data.getNegatives(v, 5)) for i, u in enumerate(word_ids) for j, v in
-                enumerate(word_ids[max(i - boundary, 0):i + boundary]) if u != v]
-
-        return result
-
-    @staticmethod
-    def collate(batches):
-        all_u = [u for batch in batches for u, _, _ in batch if len(batch) > 0]
-        all_v = [v for batch in batches for _, v, _ in batch if len(batch) > 0]
-        all_neg_v = [neg_v for batch in batches for _, _, neg_v in batch if len(batch) > 0]
-
-        return torch.LongTensor(all_u), torch.LongTensor(all_v), torch.LongTensor(all_neg_v)
