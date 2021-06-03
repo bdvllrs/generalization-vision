@@ -287,7 +287,8 @@ def get_model(model_name, device, keep_fc=False):
 
 
 BiT_model_urls = {
-    'BiT-M-R50x1': os.path.expanduser("~/.cache/torch/checkpoints/BiT-M-R50x1.npz"),
+    # 'BiT-M-R50x1': os.path.expanduser("~/.cache/torch/checkpoints/BiT-M-R50x1.npz"),
+    'BiT-M-R50x1': os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "checkpoints/BiT-M-R50x1.npz"),
 }
 clip_models = ["ViT-B/32", "RN50"]
 geirhos_model_urls = {

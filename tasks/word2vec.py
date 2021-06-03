@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from gensim.models import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec, PerplexityMetric
+from gensim.models.word2vec import LineSentence
 from nltk.corpus import wordnet as wn
 from sklearn.decomposition import PCA
 from torchvision.datasets import ImageNet
@@ -117,14 +118,19 @@ class SaveModelCallback(CallbackAny2Vec):
         self.losses.append(model.get_latest_training_loss())
         loss = self.losses[-1] if len(self.losses) == 1 else self.losses[-1] - self.losses[-2]
         print("Loss:", loss)
-        model.wv.save_word2vec_format(f"{self.save_dir}/out_{self.model_name.replace('/', '_')}.vec", binary=True)
+        model.save(f"{self.save_dir}/{self.model_name.replace('/', '_')}.model")
         np.save(f"{self.save_dir}/losses_{self.model_name.replace('/', '_')}.npy", self.losses)
         self.n_epoch += 1
 
 
+class SavePerplexity(PerplexityMetric):
+    def __init__(self):
+        super(SavePerplexity, self).__init__()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SkipGram experiment.')
-    parser.add_argument('--model', type=str, default="RN50", choices=[
+    parser.add_argument('--models', type=str, nargs="+", default="RN50", choices=[
+        "none",
         "RN50",
         "CLIP-RN50",
         "BiT-M-R50x1",
@@ -159,63 +165,71 @@ if __name__ == '__main__':
                         help='location to imagenet dataset.')
     parser.add_argument('--data_location', type=str,
                         help='location to the data information.')
+    parser.add_argument('--frozen_words_location', type=str,
+                        help='location to the frozen words file.')
     parser.add_argument('--save_dir', default=".", type=str,
                         help='location to the save data.')
 
     args = parser.parse_args()
     device = torch.device(args.device)
-    model_name = args.model
+    model_names = args.models
     input_file = args.enwiki_location
     min_count = 12
     window_size = 5
     emb_dimension = args.emb_dimension
     vocab_size = args.vocab_size
 
-    print(f"Computing model {model_name}.")
-    model, transform, tokenizer = get_model(model_name, device)
-    if model_name in ['GPT2', 'BERT']:
-        frozen_embeddings = TextFrozenEmbeddings(model, tokenizer, device, emb_dimension)
-    else:
-        frozen_embeddings = FrozenEmbeddings(model, transform, args.imagenet_location,
-                                             emb_dimension,
-                                             device)
+    for model_name in model_names:
+        if model_name != "none":
+            print(f"Computing model {model_name}.")
+            model, transform, tokenizer = get_model(model_name, device)
+            if model_name in ['GPT2', 'BERT']:
+                frozen_embeddings = TextFrozenEmbeddings(model, tokenizer, device, emb_dimension)
+            else:
+                frozen_embeddings = FrozenEmbeddings(model, transform, args.imagenet_location,
+                                                     emb_dimension,
+                                                     device)
 
-    data = np.load(args.data_location, allow_pickle=True).item()
+        data = np.load(args.data_location, allow_pickle=True).item()
+        frozen_words = np.load(args.frozen_words_location)
 
-    ntokens_train = 2227749224
-    ntokens_val = 372710618
-    # with open(input_file, "r", encoding="utf8") as wiki_file:
-    #     train_split = int(0.8 * data.sentences_count)
-    #     with open("/mnt/SSD/datasets/enwiki/wiki.en.train.text", "w", encoding="utf8") as train_file:
-    #         for k in range(train_split):
-    #             line = wiki_file.readline()
-    #             ntokens_train += len(line.split(" "))
-    #             train_file.write(line)
-    #     with open("/mnt/SSD/datasets/enwiki/wiki.en.val.text", "w", encoding="utf8") as val_file:
-    #         for k in range(train_split, data.sentences_count):
-    #             line = wiki_file.readline()
-    #             ntokens_val += len(line.split(" "))
-    #             val_file.write(line)
-    # print("ntokens_train", ntokens_train)
-    # print("ntokens_val", ntokens_val)
+        ntokens_train = 2227749224
+        ntokens_val = 372710618
+        # with open(input_file, "r", encoding="utf8") as wiki_file:
+        #     train_split = int(0.8 * data.sentences_count)
+        #     with open("/mnt/SSD/datasets/enwiki/wiki.en.train.text", "w", encoding="utf8") as train_file:
+        #         for k in range(train_split):
+        #             line = wiki_file.readline()
+        #             ntokens_train += len(line.split(" "))
+        #             train_file.write(line)
+        #     with open("/mnt/SSD/datasets/enwiki/wiki.en.val.text", "w", encoding="utf8") as val_file:
+        #         for k in range(train_split, data.sentences_count):
+        #             line = wiki_file.readline()
+        #             ntokens_val += len(line.split(" "))
+        #             val_file.write(line)
+        # print("ntokens_train", ntokens_train)
+        # print("ntokens_val", ntokens_val)
 
-    resize_vocabulary(data, vocab_size)
+        resize_vocabulary(data, vocab_size)
+        val_dataset = LineSentence(args.enwiki_val_location)
 
-    model = Word2Vec(min_count=5, window=5, vector_size=emb_dimension, workers=16, sg=1)
+        model = Word2Vec(min_count=5, window=5, vector_size=emb_dimension, workers=16, sg=1,
+                         hs=1, negative=0,
+                         callbacks=[
+                             SaveModelCallback(args.save_dir, model_name),
+                             PerplexityMetric(val_dataset, 'shell')
+                         ])
 
-    model.build_vocab([[word] for word in data.word2id.keys()], trim_rule=vocab_trim_rule)
-    model.build_vocab([[word] for word in frozen_embeddings.vocabulary.keys()], update=True, trim_rule=vocab_trim_rule)
+        model.build_vocab([[word] for word in data.word2id.keys()], trim_rule=vocab_trim_rule)
+        model.build_vocab([[word] for word in frozen_words], update=True, trim_rule=vocab_trim_rule)
 
-    # freeze the vocab of the frozen embeddings.
-    model.wv.vectors_lockf = np.ones(model.wv.vectors.shape[0])
-    for k, word in enumerate(model.wv.index_to_key):
-        if word in frozen_embeddings.vocabulary:
-            model.wv.vectors_lockf[k] = 0
+        if model_name != "none":
+            # freeze the vocab of the frozen embeddings.
+            model.wv.vectors_lockf = np.ones(model.wv.vectors.shape[0])
+            for k, word in enumerate(model.wv.index_to_key):
+                if word in frozen_embeddings.vocabulary:
+                    model.wv.vectors_lockf[k] = 0
 
-    print("Start training...")
-    model.train(corpus_file=input_file, total_words=ntokens_train, epochs=5, compute_loss=True,
-                callbacks=[
-                    SaveModelCallback(args.save_dir, model_name),
-                    # PerplexityMetric(args.enwiki_val_location, 'shell')
-                ])
-    model.wv.save_word2vec_format(f"{args.save_dir}/out_{model_name.replace('/', '_')}.vec", binary=True)
+        print("Start training...")
+        model.train(corpus_file=input_file, total_words=ntokens_train, epochs=5, compute_loss=True)
+        model.save(f"{args.save_dir}/{model_name.replace('/', '_')}.model")
