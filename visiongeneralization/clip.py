@@ -20,8 +20,9 @@ _MODELS = {
     "ViT-B/32": "https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt",
 }
 
+clip_cache = os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "clip")
 
-def _download(url: str, root: str = os.path.expanduser("~/.cache/clip")):
+def _download(url: str, root: str = clip_cache):
     os.makedirs(root, exist_ok=True)
     filename = os.path.basename(url)
     

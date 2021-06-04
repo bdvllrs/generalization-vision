@@ -213,10 +213,12 @@ if __name__ == '__main__':
         resize_vocabulary(data, vocab_size)
         val_dataset = LineSentence(args.enwiki_val_location)
 
+        if emb_dimension == -1:
+            emb_dimension = list(frozen_embeddings.values())[0].shape[0]
+
         model = Word2Vec(min_count=5, window=5, vector_size=emb_dimension, workers=16, sg=1,
                          hs=1, negative=0,
                          callbacks=[
-                             SaveModelCallback(args.save_dir, model_name),
                              PerplexityMetric(val_dataset, 'shell')
                          ])
 
@@ -231,5 +233,7 @@ if __name__ == '__main__':
                     model.wv.vectors_lockf[k] = 0
 
         print("Start training...")
-        model.train(corpus_file=input_file, total_words=ntokens_train, epochs=5, compute_loss=True)
+        model.train(corpus_file=input_file, total_words=ntokens_train, epochs=5, compute_loss=True, callbacks=[
+            SaveModelCallback(args.save_dir, model_name),
+        ])
         model.save(f"{args.save_dir}/{model_name.replace('/', '_')}.model")
