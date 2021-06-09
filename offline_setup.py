@@ -21,5 +21,5 @@ model_names = [
 
 if __name__ == '__main__':
     for k, model_name in enumerate(model_names):
-
+        print(model_name)
         model, transform, _ = get_model(model_name, "cpu")
