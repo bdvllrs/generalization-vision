@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 
 import gensim.models
 import numpy as np
@@ -39,9 +40,9 @@ class FrozenEmbeddings:
             features[k] = np.mean(all_features[labels == k], axis=0)
             std[k] = np.std(all_features[labels == k])
             counts[k] = np.sum(labels == k)
-        self.class_features = torch.from_numpy(features).to('cpu')
-        self.class_features_std = torch.from_numpy(std).to('cpu')
-        self.class_feature_counts = torch.from_numpy(counts).to('cpu')
+        self.class_features = features
+        self.class_features_std = std
+        self.class_feature_counts = counts
 
         if emb_dimension != -1:
             self.dim_reduction = PCA(n_components=emb_dimension)
@@ -62,7 +63,7 @@ class FrozenEmbeddings:
                 self.vocabulary[cls.lower()] = []
             self.vocabulary[cls.lower()].append(self.compute_class_embedding(k))
         for key, vectors in self.vocabulary.items():
-            self.vocabulary[key] = torch.stack(vectors, dim=0).mean(dim=0)
+            self.vocabulary[key] = np.vstack(vectors).mean(axis=0)
 
     def compute_class_embedding(self, index):
         return self.class_features[index]
@@ -70,9 +71,9 @@ class FrozenEmbeddings:
     def get_embedding(self, name):
         if name.lower() in self.vocabulary.keys():
             if self.emb_dimension != -1:
-                return self.dim_reduction.transform(self.vocabulary[name.lower()].unsqueeze(0).cpu().numpy())[0]
+                return self.dim_reduction.transform(np.expand_dims(self.vocabulary[name.lower()], 0))[0]
             else:
-                return self.vocabulary[name.lower()].cpu().numpy()
+                return self.vocabulary[name.lower()]
         return None
 
 
@@ -103,29 +104,39 @@ class TextFrozenEmbeddings:
         return None
 
 
-class SaveModelCallback(CallbackAny2Vec):
-    def __init__(self, save_dir, model_name):
-        super(SaveModelCallback, self).__init__()
+class EveryEpochCallback(CallbackAny2Vec):
+    def __init__(self, save_dir, model_name, frozen_embeddings, save_models=True, normalize=1.):
+        super(EveryEpochCallback, self).__init__()
         self.save_dir = save_dir
         self.model_name = model_name
         self.losses = []
         self.n_epoch = 0
+        self.save_models = save_models
+        self.frozen_embeddings = frozen_embeddings
+        self.normalize = normalize
 
     def on_epoch_begin(self, model):
         print(f"Start epoch {self.n_epoch}")
+        if self.frozen_embeddings is not None:
+            for k, word in enumerate(model.wv.index_to_key):
+                if word in self.frozen_embeddings.vocabulary:
+                    diff = np.abs(model.wv.vectors[k] - self.frozen_embeddings.vocabulary[word])
+                    assert (diff < 1e-9).all()
 
     def on_epoch_end(self, model):
         self.losses.append(model.get_latest_training_loss())
         loss = self.losses[-1] if len(self.losses) == 1 else self.losses[-1] - self.losses[-2]
-        print("Loss:", loss)
-        model.save(f"{self.save_dir}/{self.model_name.replace('/', '_')}.model")
-        np.save(f"{self.save_dir}/losses_{self.model_name.replace('/', '_')}.npy", self.losses)
+        print("Loss:", loss / self.normalize)
+        if self.save_models:
+            model.save(f"{self.save_dir}/{self.model_name.replace('/', '_')}_epoch-{self.n_epoch}.model")
+            np.save(f"{self.save_dir}/losses_{self.model_name.replace('/', '_')}.npy", self.losses)
         self.n_epoch += 1
 
 
 class SavePerplexity(PerplexityMetric):
     def __init__(self):
         super(SavePerplexity, self).__init__()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SkipGram experiment.')
@@ -169,6 +180,8 @@ if __name__ == '__main__':
                         help='location to the frozen words file.')
     parser.add_argument('--save_dir', default=".", type=str,
                         help='location to the save data.')
+    parser.add_argument('--load_dir', default=None, type=str,
+                        help='path to checkpoints to load.')
 
     args = parser.parse_args()
     device = torch.device(args.device)
@@ -179,22 +192,11 @@ if __name__ == '__main__':
     emb_dimension = args.emb_dimension
     vocab_size = args.vocab_size
 
+    ntokens_train = 2227749224
+    ntokens_val = 372710618
+    frozen_embeddings = None
+
     for model_name in model_names:
-        if model_name != "none":
-            print(f"Computing model {model_name}.")
-            model, transform, tokenizer = get_model(model_name, device)
-            if model_name in ['GPT2', 'BERT']:
-                frozen_embeddings = TextFrozenEmbeddings(model, tokenizer, device, emb_dimension)
-            else:
-                frozen_embeddings = FrozenEmbeddings(model, transform, args.imagenet_location,
-                                                     emb_dimension,
-                                                     device)
-
-        data = np.load(args.data_location, allow_pickle=True).item()
-        frozen_words = np.load(args.frozen_words_location)
-
-        ntokens_train = 2227749224
-        ntokens_val = 372710618
         # with open(input_file, "r", encoding="utf8") as wiki_file:
         #     train_split = int(0.8 * data.sentences_count)
         #     with open("/mnt/SSD/datasets/enwiki/wiki.en.train.text", "w", encoding="utf8") as train_file:
@@ -210,30 +212,61 @@ if __name__ == '__main__':
         # print("ntokens_train", ntokens_train)
         # print("ntokens_val", ntokens_val)
 
-        resize_vocabulary(data, vocab_size)
-        val_dataset = LineSentence(args.enwiki_val_location)
+        if args.load_dir is None:
+            if model_name != "none":
+                print(f"Computing model {model_name}.")
+                model, transform, tokenizer = get_model(model_name, device)
+                if model_name in ['GPT2', 'BERT']:
+                    frozen_embeddings = TextFrozenEmbeddings(model, tokenizer, device, emb_dimension)
+                else:
+                    frozen_embeddings = FrozenEmbeddings(model, transform, args.imagenet_location,
+                                                         emb_dimension,
+                                                         device)
 
-        if emb_dimension == -1:
-            emb_dimension = list(frozen_embeddings.values())[0].shape[0]
+            data = np.load(args.data_location, allow_pickle=True).item()
+            frozen_words = np.load(args.frozen_words_location)
 
-        model = Word2Vec(min_count=5, window=5, vector_size=emb_dimension, workers=16, sg=1,
-                         hs=1, negative=0,
-                         callbacks=[
-                             PerplexityMetric(val_dataset, 'shell')
-                         ])
+            resize_vocabulary(data, vocab_size)
+            val_dataset = LineSentence(args.enwiki_val_location)
 
-        model.build_vocab([[word] for word in data.word2id.keys()], trim_rule=vocab_trim_rule)
-        model.build_vocab([[word] for word in frozen_words], update=True, trim_rule=vocab_trim_rule)
+            if emb_dimension == -1:
+                emb_dimension = list(frozen_embeddings.vocabulary.values())[0].shape[0]
 
-        if model_name != "none":
-            # freeze the vocab of the frozen embeddings.
-            model.wv.vectors_lockf = np.ones(model.wv.vectors.shape[0])
-            for k, word in enumerate(model.wv.index_to_key):
-                if word in frozen_embeddings.vocabulary:
-                    model.wv.vectors_lockf[k] = 0
+            model = Word2Vec(min_count=5, window=5, vector_size=emb_dimension, workers=16, sg=1,
+                             hs=1, negative=0,
+                             callbacks=[
+                                 PerplexityMetric(val_dataset, 'shell')
+                             ])
 
-        print("Start training...")
-        model.train(corpus_file=input_file, total_words=ntokens_train, epochs=5, compute_loss=True, callbacks=[
-            SaveModelCallback(args.save_dir, model_name),
-        ])
-        model.save(f"{args.save_dir}/{model_name.replace('/', '_')}.model")
+            model.build_vocab([[word] for word in data.word2id.keys()], trim_rule=vocab_trim_rule)
+            model.build_vocab([[word] for word in frozen_words], update=True, trim_rule=vocab_trim_rule)
+
+            if model_name != "none":
+                # freeze the vocab of the frozen embeddings.
+                model.wv.vectors_lockf = np.ones(model.wv.vectors.shape[0])
+                for k, word in enumerate(model.wv.index_to_key):
+                    if word in frozen_embeddings.vocabulary:
+                        model.wv.vectors[k] = frozen_embeddings.get_embedding(word)
+                        model.wv.vectors_lockf[k] = 0
+
+            print("Start training...")
+            model.train(corpus_file=input_file, total_words=ntokens_train, epochs=args.nepochs, compute_loss=True,
+                        callbacks=[
+                            EveryEpochCallback(args.save_dir, model_name, frozen_embeddings,
+                                               save_models=(args.load_dir is None),
+                                               normalize=ntokens_train)
+                        ])
+
+            model.save(f"{args.save_dir}/{model_name.replace('/', '_')}.model")
+        else:
+            model = Word2Vec.load(os.path.join(args.load_dir, f"{model_name}.model"))
+
+        print(f"Start evaluation {model_name}...")
+        model.wv.vectors_lockf = np.zeros(model.wv.vectors.shape[0])
+
+        model.train(corpus_file=args.enwiki_val_location, total_words=ntokens_val, epochs=1, compute_loss=True,
+                    start_alpha=0, end_alpha=0,
+                    callbacks=[
+                        EveryEpochCallback(args.save_dir, model_name, None, save_models=False,
+                                           normalize=ntokens_val),
+                    ])

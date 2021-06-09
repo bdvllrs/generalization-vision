@@ -52,8 +52,8 @@ if __name__ == '__main__':
     # result_id = 326  # cos
     # result_id = 330  # cos
     # result_id = 316  # t-test
-    # result_id = 344  # t-test
-    result_id = 410  # t-test
+    result_id = 434  # t-test
+    # result_id = 410  # t-test
     idx_prototypes_bar_plot = 1
 
     dataset = "ImageNet"
@@ -79,55 +79,55 @@ if __name__ == '__main__':
     # plt.savefig(f"../results/{result_id}/umap_rdms.eps", format="eps")
     # plt.show()
 
-    # # tSNE
-    X_tsne = []
-    y_short = []
-    colors = []
-    for feat, label in zip(dim_reduced_features['tsne'], dim_reduced_features['labels']):
-        if label in corr_matrix_order:
-            X_tsne.append(feat)
-            y_short.append(model_names_short[label])
-            colors.append(color_scheme[label])
-    X_tsne = np.vstack(X_tsne)
-    # X_tsne = dim_reduced_features['tsne']
-    # y_short = [ for name in ]
-    # colors = [ for name in dim_reduced_features['labels']]
-
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(1.5 * figsize, 0.8 * figsize))
-    ax = axes[1]
-    ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=colors)
-    for xc, yc, t in zip(X_tsne[:, 0], X_tsne[:, 1], y_short):
-        ax.text(xc, yc, t, ha='center')
-    x0, x1 = ax.get_xlim()
-    y0, y1 = ax.get_ylim()
-    ax.set_aspect((x1 - x0) / (y1 - y0))
-    ax.set_title("(b)")
-    ax.set_xlabel("First component")
-    ax.set_ylabel("Second component")
-    # plt.title("t-SNE of RDMs")
-    y, X = [], []
-    for label, feat in features.items():
-        if label in corr_matrix_order:
-            X.append(feat)
-            y.append(label)
-    y_short = [model_names_short[name] for name in y]
-    colors = [color_scheme[name] for name in y]
-    X = np.stack(X, axis=0)
-
-    # Dendrogram
-    ax = axes[0]
-    model = AgglomerativeClustering(distance_threshold=0, n_clusters=None, affinity="correlation", linkage="average")
-    model = model.fit(X)
-    # plt.title("Dendrogram of hierarchical clustering of RDMs. Average linkage.")
-    plot_dendrogram(model, labels=y_short, leaf_rotation="vertical", ax=ax, count_sort="ascending")
-    ax.set_title("(a)")
-    x0, x1 = ax.get_xlim()
-    y0, y1 = ax.get_ylim()
-    ax.set_aspect((x1 - x0) / (y1 - y0))
-    ax.set_ylabel("Cluster distances")
-    plt.tight_layout(pad=1)
-    plt.savefig(f"../results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms.svg", format="svg")
-    plt.show()
+    # # # tSNE
+    # X_tsne = []
+    # y_short = []
+    # colors = []
+    # for feat, label in zip(dim_reduced_features['tsne'], dim_reduced_features['labels']):
+    #     if label in corr_matrix_order:
+    #         X_tsne.append(feat)
+    #         y_short.append(model_names_short[label])
+    #         colors.append(color_scheme[label])
+    # X_tsne = np.vstack(X_tsne)
+    # # X_tsne = dim_reduced_features['tsne']
+    # # y_short = [ for name in ]
+    # # colors = [ for name in dim_reduced_features['labels']]
+    #
+    # fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(1.5 * figsize, 0.8 * figsize))
+    # ax = axes[1]
+    # ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=colors)
+    # for xc, yc, t in zip(X_tsne[:, 0], X_tsne[:, 1], y_short):
+    #     ax.text(xc, yc, t, ha='center')
+    # x0, x1 = ax.get_xlim()
+    # y0, y1 = ax.get_ylim()
+    # ax.set_aspect((x1 - x0) / (y1 - y0))
+    # ax.set_title("(b)")
+    # ax.set_xlabel("First component")
+    # ax.set_ylabel("Second component")
+    # # plt.title("t-SNE of RDMs")
+    # y, X = [], []
+    # for label, feat in features.items():
+    #     if label in corr_matrix_order:
+    #         X.append(feat)
+    #         y.append(label)
+    # y_short = [model_names_short[name] for name in y]
+    # colors = [color_scheme[name] for name in y]
+    # X = np.stack(X, axis=0)
+    #
+    # # Dendrogram
+    # ax = axes[0]
+    # model = AgglomerativeClustering(distance_threshold=0, n_clusters=None, affinity="correlation", linkage="average")
+    # model = model.fit(X)
+    # # plt.title("Dendrogram of hierarchical clustering of RDMs. Average linkage.")
+    # plot_dendrogram(model, labels=y_short, leaf_rotation="vertical", ax=ax, count_sort="ascending")
+    # ax.set_title("(a)")
+    # x0, x1 = ax.get_xlim()
+    # y0, y1 = ax.get_ylim()
+    # ax.set_aspect((x1 - x0) / (y1 - y0))
+    # ax.set_ylabel("Cluster distances")
+    # plt.tight_layout(pad=1)
+    # plt.savefig(f"../results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms.svg", format="svg")
+    # plt.show()
 
     # # PCA
     # pca = PCA(n_components=2)
@@ -144,29 +144,31 @@ if __name__ == '__main__':
     # plt.show()
 
 
-    # figsize = 10
-    # mat = np.zeros((len(corr_matrix_order), len(corr_matrix_order)))
-    # # pval = np.zeros((len(significance), len(significance)))
-    # labels = []
-    #
-    # # Correlation between models
-    # for i, model_1 in enumerate(corr_matrix_order):
+    figsize = 10
+    mat = np.zeros((len(corr_matrix_order), len(corr_matrix_order)))
+    # pval = np.zeros((len(significance), len(significance)))
+    labels = []
+
+    # Correlation between models
+    for i, model_1 in enumerate(corr_matrix_order):
+        labels.append(model_names_short[model_1])
+        for j, model_2 in enumerate(corr_matrix_order):
+            corr = correlations[model_1][model_2]
+            mat[i, j] = corr
+    # for i, (model_1, corrs) in enumerate(sorted(correlations.items())):
     #     labels.append(model_names_short[model_1])
-    #     for j, model_2 in enumerate(corr_matrix_order):
-    #         corr = correlations[model_1][model_2]
+    #     for j, (model_2, corr) in enumerate(sorted(corrs.items())):
     #         mat[i, j] = corr
-    # # for i, (model_1, corrs) in enumerate(sorted(correlations.items())):
-    # #     labels.append(model_names_short[model_1])
-    # #     for j, (model_2, corr) in enumerate(sorted(corrs.items())):
-    # #         mat[i, j] = corr
-    # #         # pval = significance[model_1][model_2]
-    #
-    # plt.figure(figsize=(figsize, figsize))
-    # sn.heatmap(mat, annot=True, xticklabels=labels, yticklabels=labels)
-    # # plt.title("Pearson correlations between RDMs of vision and text models.")
-    # plt.tight_layout(pad=.5)
-    # plt.savefig(f"../results/{result_id}/plot_corr.pdf", format="pdf")
-    # plt.show()
+    #         # pval = significance[model_1][model_2]
+
+    plt.figure(figsize=(figsize, figsize))
+    sn.heatmap(mat, annot=True, fmt=".2f", xticklabels=labels, yticklabels=labels)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    # plt.title("Pearson correlations between RDMs of vision and text models.")
+    plt.tight_layout(pad=.5)
+    plt.savefig(f"../results/{result_id}/plot_corr.pdf", format="pdf")
+    plt.show()
 
     # plt.figure(figsize=(figsize, figsize))
     # sn.heatmap(pval, annot=True, xticklabels=labels, yticklabels=labels)

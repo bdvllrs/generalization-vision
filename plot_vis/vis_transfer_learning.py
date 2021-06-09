@@ -10,11 +10,22 @@ from visiongeneralization.utils import load_results
 #                  "IIITPets", "SUN397", "StanfordCars", "Birdsnap"]
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
 
-model_order = ["CLIP-RN50", "virtex", "ICMLM", "TSM-v", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
-               "geirhos-resnet50_trained_on_SIN_and_IN",
-               "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
-               "madry-imagenet_linf_4",
-               "madry-imagenet_linf_8"]
+model_order = list(reversed([
+    "BiT-M-R50x1",
+    "geirhos-resnet50_trained_on_SIN",
+    "geirhos-resnet50_trained_on_SIN_and_IN",
+    "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+    "RN50",
+    "madry-imagenet_l2_3_0",
+    "madry-imagenet_linf_4",
+    "madry-imagenet_linf_8",
+    "CLIP-RN50",
+    "virtex",
+    "TSM-v",
+    "ICMLM",
+    # "TSM-vat",
+    # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
+]))
 
 if __name__ == '__main__':
     # result_id = 212
@@ -24,6 +35,7 @@ if __name__ == '__main__':
 
     config, results_data = load_results(Path(f"../results/{result_id}"))
     checkpoint = results_data['checkpoint']
+    print(config)
     # _, results_data2 = load_results(Path(f"../results/406"))
     # for item, dic in checkpoint.items():
     #     checkpoint[item]["TSM-vat"]["FashionMNIST"] = results_data2['checkpoint'][item]["TSM-vat"]["FashionMNIST"]
@@ -98,14 +110,15 @@ if __name__ == '__main__':
     plt.tight_layout(pad=.5)
     plt.show()
 
-    n_rows = 2
-    n_cols = 3
+    n_rows = 1
+    n_cols = 6
     figsize = 3
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     for k, dataset in enumerate(dataset_order):
-        i, j = k // n_cols, k % n_cols
-        ax = axes[i, j]
+        # i, j = k // n_cols, k % n_cols
+        # ax = axes[i, j]
+        ax = axes[k]
         n_model = 0
         for model in model_order:
             if model in checkpoint['val_acc'].keys():
@@ -119,6 +132,8 @@ if __name__ == '__main__':
         if dataset == "StanfordCars":
             ax.set_ylim(top=0.1)
         name_dataset = dataset_names_short[dataset] if dataset in dataset_names_short else dataset
+        if k == 0:
+            ax.set_ylabel("Accuracy")
         ax.set_title(name_dataset)
         ax.set_xticks([])
         ax.set_xlabel("")

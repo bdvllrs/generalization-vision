@@ -6,14 +6,22 @@ import numpy as np
 from utils import markers_bars, dataset_names_short, model_names_short, chance_levels
 from visiongeneralization.utils import load_results
 
-model_order = ["CLIP-RN50", "virtex", "ICMLM", "TSM-v",
-               "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
-               "geirhos-resnet50_trained_on_SIN_and_IN",
-               "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN", "madry-imagenet_l2_3_0",
-               "madry-imagenet_linf_4",
-               "madry-imagenet_linf_8",
-               # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
-               ]
+model_order = list(reversed([
+    "BiT-M-R50x1",
+    "geirhos-resnet50_trained_on_SIN",
+    "geirhos-resnet50_trained_on_SIN_and_IN",
+    "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+    "RN50",
+    "madry-imagenet_l2_3_0",
+    "madry-imagenet_linf_4",
+    "madry-imagenet_linf_8",
+    "CLIP-RN50",
+    "virtex",
+    "TSM-v",
+    "ICMLM",
+    # "TSM-vat",
+    # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
+]))
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
 
@@ -31,16 +39,17 @@ if __name__ == '__main__':
     datasets = {dataset['name']: dataset for dataset in config['datasets']}
 
     n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
-    n_cols = 3
-    n_rows = 2
+    n_cols = 6
+    n_rows = 1
     figsize = 3
 
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     for k, dataset_name in enumerate(dataset_order):
         dataset = datasets[dataset_name]
-        i, j = k // n_cols, k % n_cols
-        ax = axes[i][j]
+        # i, j = k // n_cols, k % n_cols
+        # ax = axes[i][j]
+        ax = axes[k]
         for l, model in enumerate(model_order):
             model_accuracies = accuracies[model]
             if dataset['name'] in model_accuracies and model in model_names_short:

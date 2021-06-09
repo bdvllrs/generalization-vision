@@ -51,17 +51,17 @@ if __name__ == '__main__':
     datasets = {dataset['name']: dataset for dataset in config['datasets']}
 
     n_datasets = len(accuracies[list(accuracies.keys())[0]].keys())
-    n_cols = n_datasets // 2
-    n_rows = 2
+    n_cols = n_datasets
+    n_rows = 1
     figsize = 3
 
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
 
     for k, dataset_name in enumerate(dataset_order):
         dataset = datasets[dataset_name]
-        i, j = k // n_cols, k % n_cols
-        ax = axes[i, j]
-        # ax = axes[k]
+        # i, j = k // n_cols, k % n_cols
+        # ax = axes[i, j]
+        ax = axes[k]
         for model in model_order:
             model_accuracies = accuracies[model]
             if dataset['name'] in model_accuracies and model in model_names_short:
@@ -88,7 +88,7 @@ if __name__ == '__main__':
             ax.set_ylabel("")
             ax.set_xlabel("")
     # fig.suptitle("Few-shot accuracies on various datasets and models")
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=ceil((len(model_order) + 1) / 2))
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=(len(model_order)))
     plt.tight_layout(.5)
     plt.savefig(f"../results/{result_id}/few-shot-acc.svg", format="svg")
     plt.show()
