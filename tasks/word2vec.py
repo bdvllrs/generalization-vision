@@ -120,8 +120,8 @@ class EveryEpochCallback(CallbackAny2Vec):
         if self.frozen_embeddings is not None:
             for k, word in enumerate(model.wv.index_to_key):
                 if word in self.frozen_embeddings.vocabulary:
-                    diff = np.abs(model.wv.vectors[k] - self.frozen_embeddings.vocabulary[word])
-                    assert (diff < 1e-9).all()
+                    diff = np.abs(model.wv.vectors[k] - self.frozen_embeddings.get_embedding(word))
+                    assert (diff < 1e-9).all(), "Frozen vectors are wrong."
 
     def on_epoch_end(self, model):
         self.losses.append(model.get_latest_training_loss())
