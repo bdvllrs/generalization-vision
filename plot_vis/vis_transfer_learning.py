@@ -3,7 +3,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils import moving_average, markers, model_names_short, dataset_names_short, markers_bars, chance_levels
+from utils import moving_average, markers, model_names_short, dataset_names_short, markers_bars, chance_levels, \
+    plot_config
 from visiongeneralization.utils import load_results
 
 # dataset_order = ["CIFAR10", "CIFAR100", "Caltech101", "DTD", "FGVC-Aircraft", "Food101", "Flowers102",
@@ -137,7 +138,14 @@ if __name__ == '__main__':
         ax.set_title(name_dataset)
         ax.set_xticks([])
         ax.set_xlabel("")
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7)
+
+        ax.yaxis.label.set_size(plot_config.y_label_font_size)
+        ax.xaxis.label.set_size(plot_config.x_label_font_size)
+        ax.title.set_size(plot_config.title_font_size)
+        ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
+        ax.tick_params(axis='x', labelsize=plot_config.x_ticks_font_size)
+
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7, fontsize=plot_config.legend_font_size)
     plt.tight_layout(pad=.5)
     plt.savefig(f"../results/{result_id}/transfer_learning_val_acc.svg", format="svg")
     plt.show()
@@ -169,10 +177,17 @@ if __name__ == '__main__':
                    label=model_names_short[model])
             n_model += 1
     ax.axhline(np.mean(list(chance_levels.values())), linestyle="--", color="black", label="Average chance level")
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7)
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7, fontsize=plot_config.legend_font_size)
     plt.tight_layout(pad=.5)
     ax.set_xticks([])
     ax.set_xlabel("")
+
+    ax.yaxis.label.set_size(plot_config.y_label_font_size)
+    ax.xaxis.label.set_size(plot_config.x_label_font_size)
+    ax.title.set_size(plot_config.title_font_size)
+    ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
+    ax.tick_params(axis='x', labelsize=plot_config.x_ticks_font_size)
+
     plt.savefig(f"../results/{result_id}/transfer_learning_val_acc_summary.svg", format="svg")
     plt.show()
 

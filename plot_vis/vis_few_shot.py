@@ -5,7 +5,7 @@ from math import ceil
 
 import numpy as np
 
-from utils import dataset_names_short, model_names_short, markers, chance_levels, markers_bars
+from utils import dataset_names_short, model_names_short, markers, chance_levels, markers_bars, plot_config
 from visiongeneralization.utils import load_results
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     n_rows = 1
     figsize = 3
 
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize * n_cols, figsize * n_rows))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(18, 5))
 
     for k, dataset_name in enumerate(dataset_order):
         dataset = datasets[dataset_name]
@@ -83,13 +83,20 @@ if __name__ == '__main__':
             ax.set_title(dataset['name'])
         if k == 0:
             ax.set_ylabel("Accuracy")
-            ax.set_xlabel("Number of prototypes per class")
+            ax.set_xlabel("Number of\nprototypes per class")
         else:
             ax.set_ylabel("")
             ax.set_xlabel("")
+
+        ax.yaxis.label.set_size(plot_config.y_label_font_size)
+        ax.xaxis.label.set_size(plot_config.x_label_font_size)
+        ax.title.set_size(plot_config.title_font_size)
+        ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
+        ax.tick_params(axis='x', labelsize=plot_config.x_ticks_font_size)
+
     # fig.suptitle("Few-shot accuracies on various datasets and models")
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=(len(model_order)))
-    plt.tight_layout(.5)
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.3), ncol=(len(model_order) // 2 + 1), fontsize=plot_config.legend_font_size)
+    plt.tight_layout(pad=.5)
     plt.savefig(f"../results/{result_id}/few-shot-acc.svg", format="svg")
     plt.show()
 
@@ -136,9 +143,15 @@ if __name__ == '__main__':
         ax.set_xticks([])
         ax.set_xlabel("")
 
+        ax.yaxis.label.set_size(plot_config.y_label_font_size)
+        ax.xaxis.label.set_size(plot_config.x_label_font_size)
+        ax.title.set_size(plot_config.title_font_size)
+        ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
+        ax.tick_params(axis='x', labelsize=plot_config.x_ticks_font_size)
+
     # fig.subplots_adjust(bottom=0.3, wspace=0.33)
 
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7)
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7, fontsize=plot_config.legend_font_size)
     # fig.legend()
     plt.tight_layout(pad=.5)
     # fig.suptitle("Few-shot accuracies on various datasets and models")

@@ -3,7 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils import markers_bars, dataset_names_short, model_names_short, chance_levels
+from utils import markers_bars, dataset_names_short, model_names_short, chance_levels, plot_config
 from visiongeneralization.utils import load_results
 
 model_order = list(reversed([
@@ -74,8 +74,15 @@ if __name__ == '__main__':
         else:
             ax.set_ylabel("")
             ax.set_xlabel("")
+
+        ax.yaxis.label.set_size(plot_config.y_label_font_size)
+        ax.xaxis.label.set_size(plot_config.x_label_font_size)
+        ax.title.set_size(plot_config.title_font_size)
+        ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
+        ax.tick_params(axis='x', labelsize=plot_config.x_ticks_font_size)
+
     # fig.suptitle("Few-shot accuracies on various datasets and models")
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.1), ncol=7)
-    plt.tight_layout(.5)
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.3), ncol=7, fontsize=plot_config.legend_font_size)
+    plt.tight_layout(pad=.5)
     plt.savefig(f"../results/{result_id}/clustering-acc.svg", format="svg")
     plt.show()

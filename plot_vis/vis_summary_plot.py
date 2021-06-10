@@ -3,7 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils import markers_bars, model_names_short, chance_levels, size_training_data
+from utils import markers_bars, model_names_short, chance_levels, size_training_data, plot_config
 from visiongeneralization.utils import load_results
 
 # model_order = ["CLIP-RN50", "virtex", "ICMLM", "BiT-M-R50x1", "RN50", "geirhos-resnet50_trained_on_SIN",
@@ -14,17 +14,17 @@ from visiongeneralization.utils import load_results
 #                # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
 #                ]
 model_order = list(reversed([
-    "CLIP-RN50",
+    "BiT-M-R50x1",
+    "geirhos-resnet50_trained_on_SIN",
+    "geirhos-resnet50_trained_on_SIN_and_IN",
+    "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
+    "RN50",
     "madry-imagenet_l2_3_0",
     "madry-imagenet_linf_4",
     "madry-imagenet_linf_8",
-    "TSM-v",
-    "BiT-M-R50x1",
-    "geirhos-resnet50_trained_on_SIN_and_IN",
-    "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-    "geirhos-resnet50_trained_on_SIN",
-    "RN50",
+    "CLIP-RN50",
     "virtex",
+    "TSM-v",
     "ICMLM",
     # "TSM-vat",
     # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
@@ -47,8 +47,11 @@ if __name__ == '__main__':
                label=model_names_short[model_name])
     ax.set_xticks([])
     ax.set_xlabel("")
+    ax.yaxis.label.set_size(plot_config.y_label_font_size)
+    ax.title.set_size(plot_config.title_font_size)
+    ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
 
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=2)
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=2, fontsize=plot_config.legend_font_size)
     # fig.legend()
     plt.tight_layout(pad=.5)
     # fig.suptitle("Few-shot accuracies on various datasets and models")
@@ -58,7 +61,7 @@ if __name__ == '__main__':
     n_cols = 2 + len(few_shot_indices)
     n_rows = 1
 
-    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(figsize * n_cols, figsize * n_rows))
+    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(18, 3.6))
 
     # result_id = 46
     # result_id = 227
@@ -93,8 +96,11 @@ if __name__ == '__main__':
                    yerr=(np.std(accuracies) / np.sqrt(len(accuracies))), label=model_names_short[model_name])
     ax.axhline(np.mean(models['chance']), linestyle="--", color="black", label="Average chance level")
     ax.set_title("Unsupervised clustering")
+    ax.yaxis.label.set_size(plot_config.y_label_font_size)
+    ax.title.set_size(plot_config.title_font_size)
     # ax.set_ylabel("Accuracy")
     ax.set_ylim(top=0.8)
+    ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
     ax.set_xticks([])
     ax.set_xlabel("")
 
@@ -133,7 +139,10 @@ if __name__ == '__main__':
     ax.axhline(np.mean(list(chance_levels.values())), linestyle="--", color="black")
     ax.set_xticks([])
     ax.set_xlabel("")
+    ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
     ax.set_title("Transfer learning")
+    ax.yaxis.label.set_size(plot_config.y_label_font_size)
+    ax.title.set_size(plot_config.title_font_size)
 
     # result_id = 76
     # result_id = 229
@@ -179,12 +188,15 @@ if __name__ == '__main__':
         if m == 0:
             ax.set_ylabel("Accuracy")
         ax.set_ylim(top=0.8)
+        ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
         ax.set_xticks([])
         ax.set_xlabel("")
+        ax.yaxis.label.set_size(plot_config.y_label_font_size)
+        ax.title.set_size(plot_config.title_font_size)
 
     # fig.subplots_adjust(bottom=0.3, wspace=0.33)
 
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7)
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=7, fontsize=plot_config.legend_font_size)
     # fig.legend()
     plt.tight_layout(pad=.5)
     # fig.suptitle("Few-shot accuracies on various datasets and models")

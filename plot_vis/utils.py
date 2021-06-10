@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import numpy as np
 
 model_names_short = {
@@ -228,3 +230,15 @@ size_training_data = {
     "geirhos-resnet50_trained_on_SIN_and_IN": 2 * 1.3e6,
     "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN": 2 * 1.3e6,
 }
+
+
+@dataclass(frozen=True)
+class PlotConfig:
+    y_ticks_font_size = 16
+    x_ticks_font_size = 16
+    legend_font_size = 20
+    title_font_size = 20
+    y_label_font_size = 20
+    x_label_font_size = 20
+
+plot_config = PlotConfig()
