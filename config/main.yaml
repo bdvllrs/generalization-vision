@@ -1,0 +1,13 @@
+datasets:
+  CIFAR10: /path/to/dataset
+  CIFAR100: /path/to/dataset
+  SVHN: /path/to/dataset
+  CUB: /path/to/dataset
+  MNIST: /path/to/dataset
+  FashionMNIST: /path/to/dataset
+  ImageNet: /path/to/dataset
+  ImageNet150: /path/to/dataset
+  enwiki:
+    train: /path/to/dataset
+    val: /path/to/dataset
+    full: /path/to/dataset

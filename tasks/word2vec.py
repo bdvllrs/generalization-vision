@@ -14,10 +14,27 @@ from torchvision.datasets import ImageNet
 
 from visiongeneralization.models import get_model
 from visiongeneralization.text_data_utils import resize_vocabulary
-from visiongeneralization.utils import get_set_features
+from visiongeneralization.utils import get_set_features, load_conf
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+def split_train_val_dataset(data, conf):
+    ntokens_train, ntokens_val = 0, 0
+    with open(conf.datasets.enwiki.full, "r", encoding="utf8") as wiki_file:
+        train_split = int(0.8 * data.sentences_count)
+        with open(conf.datasets.enwiki.train, "w", encoding="utf8") as train_file:
+            for k in range(train_split):
+                line = wiki_file.readline()
+                ntokens_train += len(line.split(" "))
+                train_file.write(line)
+        with open(conf.datasets.enwiki.val, "w", encoding="utf8") as val_file:
+            for k in range(train_split, data.sentences_count):
+                line = wiki_file.readline()
+                ntokens_val += len(line.split(" "))
+                val_file.write(line)
+    print("ntokens_train", ntokens_train)
+    print("ntokens_val", ntokens_val)
+    return ntokens_train, ntokens_val
 
 def vocab_trim_rule(word, count, min_count):
     return gensim.utils.RULE_KEEP
@@ -53,12 +70,15 @@ class FrozenEmbeddings:
         self.build_vocabulary()
 
     def build_vocabulary(self):
+        sharks = []
         for k, classes in enumerate(self.image_net.classes):
             cls = classes[0]
             synset = wn.synsets(cls.replace(' ', '_'))[0]
             while len(cls.replace(" ", "_").split("_")) > 1:
                 synset = synset.hypernyms()[0]
                 cls = synset.lemmas()[0].name()
+            if cls.lower() == "shark":
+                sharks.append(classes[0])
             if cls.lower() not in self.vocabulary:
                 self.vocabulary[cls.lower()] = []
             self.vocabulary[cls.lower()].append(self.compute_class_embedding(k))
@@ -86,8 +106,8 @@ class TextFrozenEmbeddings:
 
         self.vocabulary = {}
         for word in self.frozen_words:
-            inputs = tokenizer([f"a photo of a {word}"])
-            self.vocabulary[word] = self.model.encode_text(inputs, self.device, 3)[0].detach().cpu().numpy().astype(np.float32)
+            inputs = tokenizer([f"a {word}"])
+            self.vocabulary[word] = self.model.encode_text(inputs, self.device, 1)[0].detach().cpu().numpy().astype(np.float32)
 
         if emb_dimension != -1:
             self.dim_reduction = PCA(n_components=emb_dimension)
@@ -170,12 +190,6 @@ if __name__ == '__main__':
                         help='Size of vocabulary.')
     parser.add_argument('--emb_dimension', default=-1, type=int,
                         help='Size of the embedding.')
-    parser.add_argument('--enwiki_location', type=str,
-                        help='Location to the enwiki model.')
-    parser.add_argument('--enwiki_val_location', type=str,
-                        help='Location to the enwiki model.')
-    parser.add_argument('--imagenet_location', type=str,
-                        help='location to imagenet dataset.')
     parser.add_argument('--data_location', type=str,
                         help='location to the data information.')
     parser.add_argument('--frozen_words_location', type=str,
@@ -186,9 +200,10 @@ if __name__ == '__main__':
                         help='path to checkpoints to load.')
 
     args = parser.parse_args()
+    conf = load_conf()
+
     device = torch.device(args.device)
     model_names = args.models
-    input_file = args.enwiki_location
     min_count = 12
     window_size = 5
     emb_dimension = args.emb_dimension
@@ -196,40 +211,25 @@ if __name__ == '__main__':
 
     ntokens_train = 2227749224
     ntokens_val = 372710618
+
     frozen_embeddings = None
 
     for model_name in model_names:
-        # with open(input_file, "r", encoding="utf8") as wiki_file:
-        #     train_split = int(0.8 * data.sentences_count)
-        #     with open("/mnt/SSD/datasets/enwiki/wiki.en.train.text", "w", encoding="utf8") as train_file:
-        #         for k in range(train_split):
-        #             line = wiki_file.readline()
-        #             ntokens_train += len(line.split(" "))
-        #             train_file.write(line)
-        #     with open("/mnt/SSD/datasets/enwiki/wiki.en.val.text", "w", encoding="utf8") as val_file:
-        #         for k in range(train_split, data.sentences_count):
-        #             line = wiki_file.readline()
-        #             ntokens_val += len(line.split(" "))
-        #             val_file.write(line)
-        # print("ntokens_train", ntokens_train)
-        # print("ntokens_val", ntokens_val)
-
         if model_name != "none":
             print(f"Computing model {model_name}.")
             model, transform, tokenizer = get_model(model_name, device)
             if model_name in ['GPT2', 'BERT']:
                 frozen_embeddings = TextFrozenEmbeddings(model, tokenizer, device, emb_dimension)
             else:
-                frozen_embeddings = FrozenEmbeddings(model, transform, args.imagenet_location,
+                frozen_embeddings = FrozenEmbeddings(model, transform, conf.datasets.ImageNet,
                                                      emb_dimension, device)
 
         if args.load_dir is None:
-
             data = np.load(args.data_location, allow_pickle=True).item()
+            # ntokens_train, ntokens_val = split_train_val_dataset(conf)
             frozen_words = np.load(args.frozen_words_location)
 
             resize_vocabulary(data, vocab_size)
-            val_dataset = LineSentence(args.enwiki_val_location)
 
             if emb_dimension == -1:
                 emb_dimension = list(frozen_embeddings.vocabulary.values())[0].shape[0]
@@ -249,7 +249,7 @@ if __name__ == '__main__':
                         model.wv.vectors_lockf[word_idx] = 0.
 
             print("Start training...")
-            model.train(corpus_file=input_file, total_words=ntokens_train, epochs=args.nepochs, compute_loss=True,
+            model.train(corpus_file=conf.datasets.enwiki.train, total_words=ntokens_train, epochs=args.nepochs, compute_loss=True,
                         callbacks=[
                             EveryEpochCallback(args.save_dir, model_name, frozen_embeddings,
                                                save_models=(args.load_dir is None),
@@ -268,9 +268,9 @@ if __name__ == '__main__':
         #         word_idx = model.wv.get_index(word)
         #         print(model.wv.vectors_lockf[word_idx])
 
-        model.train(corpus_file=args.enwiki_val_location, total_words=ntokens_val, epochs=1, compute_loss=True,
+        model.train(corpus_file=conf.datasets.enwiki.val, total_words=ntokens_val, epochs=1, compute_loss=True,
                     start_alpha=0, end_alpha=0,
                     callbacks=[
                         EveryEpochCallback(args.save_dir, model_name, frozen_embeddings, save_models=False,
-                                           normalize=ntokens_val),
+                                           normalize=ntokens_val)
                     ])

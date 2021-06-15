@@ -6,7 +6,7 @@ import torch
 
 from visiongeneralization.datasets.datasets import get_dataset, RandomizedDataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import evaluate_dataset, get_prototypes, run, save_results
+from visiongeneralization.utils import evaluate_dataset, get_prototypes, run, save_results, load_conf
 
 
 def get_args():
@@ -104,6 +104,7 @@ def main(config, accuracies, confusion_matrices):
 if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args = get_args()
+    conf = load_conf()
 
     load_results_id = args.load_results
     batch_size = args.batch_size
@@ -130,12 +131,12 @@ if __name__ == '__main__':
 
     # Dataset to test on
     datasets = [
-        {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": "/mnt/HD1/datasets/StreetViewHouseNumbers/format2"},
-        {"name": "CUB", "batch_size": args.batch_size, "root_dir": "/mnt/HD1/datasets/CUB/CUB_200_2011"},
-        {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
+        {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": conf.datasets.CIFAR10},
+        {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": conf.datasets.SVHN},
+        {"name": "CUB", "batch_size": args.batch_size, "root_dir": conf.datasets.CUB},
+        {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": conf.datasets.CIFAR100},
+        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": conf.datasets.MNIST},
+        {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": conf.datasets.FashionMNIST},
     ]
     # Number of prototypes per class and number of trials for each number of prototype
     prototypes_trials = {n_proto: args.ntrials for n_proto in [1, 5, 10]}

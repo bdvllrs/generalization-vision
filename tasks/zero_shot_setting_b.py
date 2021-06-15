@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import run, save_results
+from visiongeneralization.utils import run, save_results, load_conf
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -169,6 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
     args = parser.parse_args()
+    conf = load_conf()
 
     load_results_id = args.load_results
     batch_size = args.batch_size
@@ -194,13 +195,12 @@ if __name__ == '__main__':
 
     # Dataset to test on
     datasets = [
-        {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "HouseNumbers", "batch_size": args.batch_size,
-         "root_dir": "/mnt/HD1/datasets/StreetViewHouseNumbers/format2"},
-        {"name": "CUB", "batch_size": args.batch_size, "root_dir": "/mnt/HD1/datasets/CUB/CUB_200_2011"},
-        {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
+        {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": conf.datasets.CIFAR10},
+        {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": conf.datasets.SVHN},
+        {"name": "CUB", "batch_size": args.batch_size, "root_dir": conf.datasets.CUB},
+        {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": conf.datasets.CIFAR100},
+        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": conf.datasets.MNIST},
+        {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": conf.datasets.FashionMNIST},
     ]
 
     config = {

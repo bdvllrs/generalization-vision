@@ -10,7 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import get_set_features, save_results, run, get_rdm
+from visiongeneralization.utils import get_set_features, save_results, run, get_rdm, load_conf
 
 
 def cosine_metric(X, Y=None, dense_output=True):
@@ -118,6 +118,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size.')
     args = parser.parse_args()
+    conf = load_conf()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -142,12 +143,12 @@ if __name__ == '__main__':
     # Dataset to test on
     datasets = [
         # {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
-        {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/StreetViewHouseNumbers/format2"},
-        {"name": "CUB", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/CUB/CUB_200_2011"},
+        {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": conf.datasets.CIFAR10},
+        {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": conf.datasets.SVHN},
+        {"name": "CUB", "batch_size": args.batch_size, "root_dir": conf.datasets.CUB},
+        {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": conf.datasets.CIFAR100},
+        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": conf.datasets.MNIST},
+        {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": conf.datasets.FashionMNIST},
     ]
 
     config = {

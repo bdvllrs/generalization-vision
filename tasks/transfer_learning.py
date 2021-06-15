@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import run, save_results
+from visiongeneralization.utils import run, save_results, load_conf
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -148,6 +148,7 @@ if __name__ == '__main__':
                         help='Batch size.')
 
     args = parser.parse_args()
+    conf = load_conf()
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Models to test
@@ -191,12 +192,12 @@ if __name__ == '__main__':
         # {"name": "SUN397", "batch_size": args.batch_size, "root_dir": os.path.expanduser("/mnt/SSD/datasets/SUN")},
         # {"name": "StanfordCars", "batch_size": args.batch_size,
         #  "root_dir": os.path.expanduser("/mnt/SSD/datasets/StanfordCars")},
-        {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "HouseNumbers", "batch_size": 64, "root_dir": "/mnt/SSD/datasets/StreetViewHouseNumbers/format2"},
-        {"name": "CUB", "batch_size": 64, "root_dir": "/mnt/SSD/datasets/CUB/CUB_200_2011"},
-        {"name": "MNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
-        {"name": "FashionMNIST", "batch_size": 64, "root_dir": os.path.expanduser("~/.cache")},
+        {"name": "CIFAR10", "batch_size": args.batch_size, "root_dir": conf.datasets.CIFAR10},
+        {"name": "HouseNumbers", "batch_size": args.batch_size, "root_dir": conf.datasets.SVHN},
+        {"name": "CUB", "batch_size": args.batch_size, "root_dir": conf.datasets.CUB},
+        {"name": "CIFAR100", "batch_size": args.batch_size, "root_dir": conf.datasets.CIFAR100},
+        {"name": "MNIST", "batch_size": args.batch_size, "root_dir": conf.datasets.MNIST},
+        {"name": "FashionMNIST", "batch_size": args.batch_size, "root_dir": conf.datasets.FashionMNIST},
     ]
 
     config = {

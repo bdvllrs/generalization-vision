@@ -71,7 +71,7 @@ class GPT2Model(torch.nn.Module):
 
     def encode_text(self, inputs, device, class_token_position=0):
         hidden_states = self.transformer_model(**inputs, output_hidden_states=True)['hidden_states']
-        return hidden_states[-1][:, class_token_position + 1]  # +1 for start token
+        return hidden_states[-1][:, class_token_position]
 
 
 class BERTModel(torch.nn.Module):

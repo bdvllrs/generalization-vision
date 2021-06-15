@@ -9,7 +9,7 @@ import umap
 from scipy.spatial.distance import squareform
 from sklearn.manifold import TSNE
 
-from visiongeneralization.utils import get_prototypes, get_rdm, save_results, run
+from visiongeneralization.utils import get_prototypes, get_rdm, save_results, run, load_conf
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
 
@@ -133,6 +133,7 @@ if __name__ == '__main__':
                         help='Whether to use imagenet with 150 classes.')
 
     args = parser.parse_args()
+    conf = load_conf()
 
     # Models to test
     model_names = [
@@ -160,11 +161,11 @@ if __name__ == '__main__':
     if args.imagenet150:
         datasets.append(
             {"name": "ImageNetVal150", "batch_size": args.batch_size,
-             "root_dir": "/mnt/SSD/datasets/StandardInceptionDB/val"}
+             "root_dir": conf.datasets.ImageNet150}
         )
     else:
         datasets.append(
-            {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
+            {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": conf.datasets.ImageNet},
         )
 
     config = {

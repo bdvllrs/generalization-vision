@@ -3,6 +3,9 @@ from dataclasses import dataclass
 import numpy as np
 
 model_names_short = {
+    "none": "Baseline (Skip-Gram)",
+    "BERT": "BERT",
+    "GPT2": "GPT2",
     "BERT_text": "BERT",
     "GPT2_text": "GPT2",
     "TSM-v": "TSM",
@@ -59,6 +62,7 @@ markers = {
     # "BERT_text": "BERT",
     # "GPT2_text": "GPT2",
     # "Word2Vec",
+    "none": ("xkcd: black", "-"),
     "CLIP-RN50": ("xkcd:blue", "-"),
     # "CLIP-RN50_text": ("xkcd:indigo", "."),
     "virtex": ("xkcd:blue", "--"),
@@ -81,6 +85,9 @@ markers_bars = {
     # "BERT_text": "BERT",
     # "GPT2_text": "GPT2",
     # "Word2Vec",
+    "none": ("xkcd:black", ""),
+    "GPT2": ("xkcd:dark grey", ""),
+    "BERT": ("xkcd:light grey", ""),
     "CLIP-RN50": ("xkcd:light blue", ""),
     # "semi-supervised-YFCC100M": ("xkcd:indigo", ""),
     # "semi-weakly-supervised-instagram": ("xkcd:dark blue", ""),
@@ -219,8 +226,8 @@ size_training_data = {
     "CLIP-RN50": 400e6,
     "virtex": 120e3,
     "ICMLM": 120e3,
-    "TSM-v": 136e6,
-    "TSM-visual": 136e6,
+    "TSM-v": 120e6 * 32,
+    "TSM-visual": 120e6 * 32,
     "RN50": 1.3e6,
     "BiT-M-R50x1": 14e6,
     "madry-imagenet_l2_3_0": 110 * 1.3e6,

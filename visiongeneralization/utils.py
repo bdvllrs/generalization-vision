@@ -1,13 +1,17 @@
 import json
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import torch
+from omegaconf import OmegaConf
 from sklearn.metrics import confusion_matrix as confusion_matrix_, accuracy_score as accuracy_score_
 from torch.utils import model_zoo
 from tqdm import tqdm
+
+PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 
 def max_margin_loss(predictions, labels):
@@ -329,3 +333,25 @@ def run(fun, config: dict, load_saved_results: int = None, **params):
     loaded_config["results_path"] = str(results_path)
     # run main
     fun(loaded_config, **params)
+
+def load_conf(debug=False):
+    print("Cli args")
+    print(sys.argv)
+
+    # Configurations
+    config_path = PROJECT_DIR / "config"
+    main_args = OmegaConf.load(str((config_path / "main.yaml").resolve()))
+    if debug and (config_path / "debug.yaml").exists():
+        debug_args = OmegaConf.load(str((config_path / "debug.yaml").resolve()))
+    else:
+        debug_args = {}
+    if (config_path / "local.yaml").exists():
+        local_args = OmegaConf.load(str((config_path / "local.yaml").resolve()))
+    else:
+        local_args = {}
+
+    args = OmegaConf.merge(main_args, local_args, debug_args)
+
+    print("Complete args")
+    print(OmegaConf.to_yaml(args))
+    return args

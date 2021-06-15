@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import run
+from visiongeneralization.utils import run, load_conf
 
 
 def val(model_, dataset_, batch_size):
@@ -53,6 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size.')
     args = parser.parse_args()
+    conf = load_conf()
 
     batch_size = args.batch_size
 
@@ -60,22 +61,21 @@ if __name__ == '__main__':
     model_names = [
         # "semi-supervised-YFCC100M",
         # "semi-weakly-supervised-instagram",
-        # "BiT-M-R50x1",
+        "BiT-M-R50x1",
         "RN50",
         "geirhos-resnet50_trained_on_SIN",
         "madry-imagenet_l2_3_0",
-        # "virtex",
+        "virtex",
         "geirhos-resnet50_trained_on_SIN_and_IN",
         "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
         "madry-imagenet_linf_4",
         "madry-imagenet_linf_8",
-        # "CLIP-ViT-B/32",
-        # "CLIP-RN50",
+        "CLIP-RN50",
     ]
 
     # Dataset to test on
     datasets = [
-        {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
+        {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": conf.datasets.ImageNet},
     ]
 
     config = {

@@ -40,18 +40,16 @@ result_id_clustering = 402
 result_id_transfer_learning = 372
 
 if __name__ == '__main__':
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figsize, figsize))
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figsize, 0.8 * figsize))
     for k, model_name in enumerate(model_order):
         color, hatch = markers_bars[model_name]
         ax.bar([k * 0.35], size_training_data[model_name], 0.35, color=color, hatch=hatch, log=True,
                label=model_names_short[model_name])
     ax.set_xticks([])
     ax.set_xlabel("")
-    ax.yaxis.label.set_size(plot_config.y_label_font_size)
-    ax.title.set_size(plot_config.title_font_size)
-    ax.tick_params(axis='y', labelsize=plot_config.y_ticks_font_size)
+    ax.set_ylabel("Number of training examples")
 
-    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=2, fontsize=plot_config.legend_font_size)
+    fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.2), ncol=1)
     # fig.legend()
     plt.tight_layout(pad=.5)
     # fig.suptitle("Few-shot accuracies on various datasets and models")
