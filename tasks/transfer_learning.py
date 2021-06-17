@@ -1,5 +1,4 @@
 import argparse
-import os
 
 import numpy as np
 import torch
@@ -10,7 +9,7 @@ from tqdm import tqdm
 
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import run, save_results, load_conf
+from visiongeneralization.utils import run, save_results, load_conf, available_model_names
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -135,9 +134,15 @@ def main(config, checkpoint):
 
 
 if __name__ == '__main__':
+    conf = load_conf()
+
     parser = argparse.ArgumentParser(description='transfer learning generalization task.')
     parser.add_argument('--load_results', default=None, type=int,
                         help='Id of a previous experiment to continue.')
+    parser.add_argument('--models', type=str, nargs="+",
+                        default=available_model_names(conf), choices=available_model_names(conf), help='Model to use.')
+    parser.add_argument('--override_models', type=str, nargs="+",
+                        default=[], choices=available_model_names(conf), help='Models to override.')
     parser.add_argument('--lr', default=1e-3, type=float,
                         help='Learning rate.')
     parser.add_argument('--n_epochs', default=150, type=int,
@@ -148,28 +153,10 @@ if __name__ == '__main__':
                         help='Batch size.')
 
     args = parser.parse_args()
-    conf = load_conf()
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Models to test
-    model_names = [
-        "TSM-v",
-        "TSM-vat",
-        "CLIP-RN50",
-        "virtex",
-        "BiT-M-R50x1",
-        "RN50",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "madry-imagenet_l2_3_0",
-        # "CLIP-ViT-B/32",
-        "geirhos-resnet50_trained_on_SIN",
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
-        "ICMLM",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
-    ]
+    model_names = args.models
 
     # Dataset to test on
     datasets = [
@@ -206,7 +193,7 @@ if __name__ == '__main__':
         "lr": args.lr,
         "n_epochs": args.n_epochs,
         "n_workers": args.n_workers,
-        "override_models": []
+        "override_models": args.override_models
     }
 
     checkpoint = {

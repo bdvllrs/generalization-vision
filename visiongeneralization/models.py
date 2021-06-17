@@ -232,7 +232,7 @@ def get_model(model_name, device, keep_fc=False):
         model.load_from(np.load(BiT_model_urls[model_name]))
         model = ModelEncapsulation(model, 2048)
         model.to(device)
-        transform = get_imagenet_transform
+        transform = lambda x, y: get_imagenet_transform(x, y, mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
     elif model_name == "semi-supervised-YFCC100M":
         model = resnet50(pretrained=False)
         checkpoint = torch.load(os.path.join(vissl_model_folder, "converted_vissl_rn50_semi_sup_08389792.torch"),
@@ -304,7 +304,9 @@ madry_models = ["imagenet_l2_3_0", "imagenet_linf_4", "imagenet_linf_8"]
 imagenet_norm_mean, imagenet_norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
 
-def get_imagenet_transform(img_size=256, augmentation=False, normalize=True):
+def get_imagenet_transform(img_size=256, augmentation=False, normalize=True, mean=None, std=None):
+    mean = imagenet_norm_mean if mean is None else mean
+    std = imagenet_norm_std if std is None else std
     img_size = 256  # force full size
     img_size_resize = img_size + 20 if augmentation and img_size > 128 else img_size
     transformations = [
@@ -321,6 +323,6 @@ def get_imagenet_transform(img_size=256, augmentation=False, normalize=True):
     ])
 
     if normalize:
-        transformations.append(transforms.Normalize(imagenet_norm_mean, imagenet_norm_std))
+        transformations.append(transforms.Normalize(mean, std))
 
     return transforms.Compose(transformations)

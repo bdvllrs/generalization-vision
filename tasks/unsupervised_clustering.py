@@ -10,7 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import get_set_features, save_results, run, get_rdm, load_conf
+from visiongeneralization.utils import get_set_features, save_results, run, get_rdm, load_conf, available_model_names
 
 
 def cosine_metric(X, Y=None, dense_output=True):
@@ -112,34 +112,24 @@ def main(config, acc):
 
 
 if __name__ == '__main__':
+    conf = load_conf()
+
     parser = argparse.ArgumentParser(description='Unsupervised clustering task.')
     parser.add_argument('--load_results', default=None, type=int,
                         help='Id of a previous experiment to continue.')
+    parser.add_argument('--models', type=str, nargs="+",
+                        default=available_model_names(conf), choices=available_model_names(conf), help='Model to use.')
+    parser.add_argument('--override_models', type=str, nargs="+",
+                        default=[], choices=available_model_names(conf), help='Models to override.')
     parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size.')
     args = parser.parse_args()
-    conf = load_conf()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Models to test
-    model_names = [
-        "TSM-vat",
-        "TSM-v",
-        "ICMLM",
-        "RN50",
-        "CLIP-RN50",
-        "BiT-M-R50x1",
-        "virtex",
-        "madry-imagenet_l2_3_0",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
-        "geirhos-resnet50_trained_on_SIN",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-    ]
+    model_names = args.models
+
     # Dataset to test on
     datasets = [
         # {"name": "ImageNet", "batch_size": args.batch_size, "root_dir": "/mnt/SSD/datasets/imagenet"},
@@ -154,7 +144,7 @@ if __name__ == '__main__':
     config = {
         "model_names": model_names,
         "datasets": datasets,
-        "override_models": []
+        "override_models": args.override_models
     }
 
     run(main, config, args.load_results, acc={})

@@ -1,24 +1,11 @@
 import argparse
-import os
 
 import numpy as np
 import torch
 
 from visiongeneralization.datasets.datasets import get_dataset, RandomizedDataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import evaluate_dataset, get_prototypes, run, save_results, load_conf
-
-
-def get_args():
-    parser = argparse.ArgumentParser(description='Few-shot generalization task.')
-    parser.add_argument('--load_results', default=None, type=int,
-                        help='Id of a previous experiment to continue.')
-    parser.add_argument('--ntrials', default=10, type=int,
-                        help='Number of trials to execute.')
-    parser.add_argument('--batch_size', default=64, type=int,
-                        help='Batch size.')
-
-    return parser.parse_args()
+from visiongeneralization.utils import evaluate_dataset, get_prototypes, run, save_results, load_conf, available_model_names
 
 
 def main(config, accuracies, confusion_matrices):
@@ -78,7 +65,8 @@ def main(config, accuracies, confusion_matrices):
 
                             # Define class prototypes
                             class_features, _, _ = get_prototypes(model, dataset_train.randomize(), device,
-                                                                  n_examples_per_class=n_proto, n_classes=len(class_names))
+                                                                  n_examples_per_class=n_proto,
+                                                                  n_classes=len(class_names))
                             accuracy, confusion_matrix = evaluate_dataset(model, dataset_test, class_features,
                                                                           list(range(len(class_names))), device,
                                                                           encode_text=False,
@@ -103,31 +91,29 @@ def main(config, accuracies, confusion_matrices):
 
 if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    args = get_args()
+
     conf = load_conf()
+    available_models = available_model_names(conf)
+
+    parser = argparse.ArgumentParser(description='Few-shot generalization task.')
+    parser.add_argument('--load_results', default=None, type=int,
+                        help='Id of a previous experiment to continue.')
+    parser.add_argument('--models', type=str, nargs="+", default=available_models, choices=available_models,
+                        help='Model to do.')
+    parser.add_argument('--override_models', type=str, nargs="+",
+                        default=[], choices=available_model_names(conf), help='Models to override.')
+    parser.add_argument('--ntrials', default=10, type=int,
+                        help='Number of trials to execute.')
+    parser.add_argument('--batch_size', default=64, type=int,
+                        help='Batch size.')
+
+    args = parser.parse_args()
+
+    # Models to test
+    model_names = args.models
 
     load_results_id = args.load_results
     batch_size = args.batch_size
-
-    # Models to test
-    model_names = [
-        "TSM-v",
-        "TSM-vat",
-        "ICMLM",
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
-        "geirhos-resnet50_trained_on_SIN",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
-        "CLIP-ViT-B/32",
-        "CLIP-RN50",
-        "virtex",
-        "RN50",
-        "BiT-M-R50x1",
-    ]
 
     # Dataset to test on
     datasets = [
@@ -145,7 +131,7 @@ if __name__ == '__main__':
         "model_names": model_names,
         "datasets": datasets,
         "prototypes_trials": prototypes_trials,
-        "override_models": []
+        "override_models": args.override_models
     }
 
     run(main, config, load_results_id, accuracies={}, confusion_matrices={})

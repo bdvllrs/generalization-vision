@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
-from visiongeneralization.utils import run, save_results, max_margin_loss, load_conf
+from visiongeneralization.utils import run, save_results, max_margin_loss, load_conf, available_model_names
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -217,11 +217,17 @@ def main(config, checkpoint):
 
 
 if __name__ == '__main__':
+    conf = load_conf()
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     parser = argparse.ArgumentParser(description='Zero-shot generalization task.')
     parser.add_argument('--load_results', default=None, type=int,
                         help='Id of a previous experiment to continue.')
+    parser.add_argument('--models', type=str, nargs="+",
+                        default=available_model_names(conf), choices=available_model_names(conf), help='Model to use.')
+    parser.add_argument('--override_models', type=str, nargs="+",
+                        default=[], choices=available_model_names(conf), help='Models to override.')
     parser.add_argument('--language_model', type=str, default="GPT2", choices=["GPT2", "BERT", "CLIP"],
                         help='Language model to use for the projection.')
     parser.add_argument('--lr', default=1e-3, type=float,
@@ -243,29 +249,12 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
     args = parser.parse_args()
-    conf = load_conf()
 
     load_results_id = args.load_results
     batch_size = args.batch_size
 
     # Models to test
-    model_names = [
-        "CLIP-RN50",
-        "RN50",
-        "BiT-M-R50x1",
-        "virtex",
-        "ICMLM",
-        "geirhos-resnet50_trained_on_SIN",
-        "madry-imagenet_l2_3_0",
-        "TSM-v",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "madry-imagenet_linf_4",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        "madry-imagenet_linf_8",
-        # "CLIP-ViT-B/32",
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
-    ]
+    model_names = args.models
 
     # Dataset to test on
     datasets = [
@@ -289,8 +278,8 @@ if __name__ == '__main__':
         "lm": args.language_model,
         "n_trials": args.n_trials,
         "seen_prop": args.seen_prop,
-        "caption_sentence_prototypes": ("a photo of {classname}.", 3),
-        "override_models": []
+        "caption_sentence_prototypes": conf.caption_sentence_prototype,
+        "override_models": args.override_models
     }
 
     checkpoint = {

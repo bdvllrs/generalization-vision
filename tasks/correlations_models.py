@@ -9,7 +9,7 @@ import umap
 from scipy.spatial.distance import squareform
 from sklearn.manifold import TSNE
 
-from visiongeneralization.utils import get_prototypes, get_rdm, save_results, run, load_conf
+from visiongeneralization.utils import get_prototypes, get_rdm, save_results, run, load_conf, available_model_names
 from visiongeneralization.datasets.datasets import get_dataset
 from visiongeneralization.models import get_model
 
@@ -120,9 +120,16 @@ def main(config, feature_cache, correlations, significance=None, dim_reducted_fe
 if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    conf = load_conf()
+    available_models = available_model_names(conf)
+
     parser = argparse.ArgumentParser(description='Correlations between models.')
     parser.add_argument('--load_results', default=None, type=int,
                         help='Id of a previous experiment to continue.')
+    parser.add_argument('--models', type=str, nargs="+", default=available_models, choices=available_models,
+                        help='Model to do.')
+    parser.add_argument('--override_models', type=str, nargs="+",
+                        default=[], choices=available_model_names(conf), help='Models to override.')
     parser.add_argument('--batch_size', default=80, type=int,
                         help='Batch size.')
     parser.add_argument('--rdm_distance_metric', type=str, default="t-test", choices=["t-test", "cosine", "correlation"],
@@ -133,29 +140,10 @@ if __name__ == '__main__':
                         help='Whether to use imagenet with 150 classes.')
 
     args = parser.parse_args()
-    conf = load_conf()
 
     # Models to test
-    model_names = [
-        "BERT",
-        "TSM-visual",
-        # "TSM-shared",
-        "ICMLM",
-        "CLIP-RN50",
-        "RN50",
-        "virtex",
-        "BiT-M-R50x1",
-        "GPT2",
-        "madry-imagenet_l2_3_0",
-        "madry-imagenet_linf_4",
-        "madry-imagenet_linf_8",
-        "geirhos-resnet50_trained_on_SIN",
-        "geirhos-resnet50_trained_on_SIN_and_IN",
-        "geirhos-resnet50_trained_on_SIN_and_IN_then_finetuned_on_IN",
-        # "Word2Vec",
-        # "semi-supervised-YFCC100M",
-        # "semi-weakly-supervised-instagram",
-    ]
+    model_names = args.models
+
     # Dataset to test on
     datasets = []
     if args.imagenet150:
@@ -173,11 +161,8 @@ if __name__ == '__main__':
         "datasets": datasets,
         "rdm_distance_metric": args.rdm_distance_metric,
         "rda_correlation_type": args.rda_correlation_type,
-        "caption_sentence_prototypes": ("a photo of {classname}.", 3),
-        "override_models": [
-            # "semi-supervised-YFCC100M",
-            # "semi-weakly-supervised-instagram",
-        ]
+        "caption_sentence_prototypes": conf.caption_sentence_prototype,
+        "override_models": args.override_models
     }
 
     run(main, config, args.load_results,

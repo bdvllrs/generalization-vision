@@ -334,6 +334,7 @@ def run(fun, config: dict, load_saved_results: int = None, **params):
     # run main
     fun(loaded_config, **params)
 
+
 def load_conf(debug=False):
     print("Cli args")
     print(sys.argv)
@@ -355,3 +356,30 @@ def load_conf(debug=False):
     print("Complete args")
     print(OmegaConf.to_yaml(args))
     return args
+
+
+def load_vocab(path, vocab_size=-1):
+    with open(path, "r") as vocab_file:
+        visual_words = vocab_file.read().split("\n")
+    return visual_words[:vocab_size]
+
+
+def available_model_names(conf, visual=True, multimodal=True, textual=True):
+    models = []
+    if visual:
+        models.extend(conf.models.visual)
+    if multimodal:
+        models.extend(conf.models.multimodal)
+    if textual:
+        models.extend(conf.models.textual)
+    return models
+
+# def load_vocabulary(path, vocab_size):
+#     vocab = []
+#     with open(path, newline='\n') as vocab_file:
+#         csv_reader = csv.reader(vocab_file, delimiter=',', quotechar='"')
+#         for k, row in enumerate(csv_reader):
+#             if k >= 1:
+#                 vocab.append((row[0], int(row[1])))
+#     vocab = sorted(vocab, key=lambda x: x[1], reverse=True)
+#     return list(map(lambda x: x[0], vocab[:vocab_size]))
