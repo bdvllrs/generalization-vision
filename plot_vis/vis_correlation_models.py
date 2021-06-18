@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sn
@@ -52,12 +53,20 @@ corr_matrix_order = [
 ]
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Model Comparison visualisations')
+    parser.add_argument('--load_results', default=None, type=int,
+                        help='Id of a previous experiment to continue.')
+    parser.add_argument("--umap", help="Plot UMAP", action="store_true")
+    parser.add_argument("--pca", help="Plot PCA", action="store_true")
+    args = parser.parse_args()
+
     # result_id = 327  # corr
     # result_id = 326  # cos
     # result_id = 330  # cos
     # result_id = 316  # t-test
-    result_id = 434  # t-test
+    # result_id = 434  # t-test
     # result_id = 410  # t-test
+    result_id = args.load_results
     idx_prototypes_bar_plot = 1
 
     dataset = "ImageNet"
@@ -70,18 +79,19 @@ if __name__ == '__main__':
     features = result_data["feature_cache"]
     dim_reduced_features = result_data["dim_reducted_features"]
 
-    # # UMAP
-    # x_umap = dim_reduced_features['umap']
-    # y_short = [model_names_short[name] for name in dim_reduced_features['labels']]
-    # colors = [color_scheme[name] for name in dim_reduced_features['labels']]
-    # plt.figure(figsize=(figsize, figsize))
-    # plt.scatter(x_umap[:, 0], x_umap[:, 1], c=colors)
-    # for xc, yc, t in zip(x_umap[:, 0], x_umap[:, 1], y_short):
-    #     plt.text(xc, yc, t)
-    # # plt.title("UMAP of RDMs")
-    # plt.tight_layout(.5)
-    # plt.savefig(f"../results/{result_id}/umap_rdms.eps", format="eps")
-    # plt.show()
+    # UMAP
+    if args.umap:
+        x_umap = dim_reduced_features['umap']
+        y_short = [model_names_short[name] for name in dim_reduced_features['labels']]
+        colors = [color_scheme[name] for name in dim_reduced_features['labels']]
+        plt.figure(figsize=(figsize, figsize))
+        plt.scatter(x_umap[:, 0], x_umap[:, 1], c=colors)
+        for xc, yc, t in zip(x_umap[:, 0], x_umap[:, 1], y_short):
+            plt.text(xc, yc, t)
+        # plt.title("UMAP of RDMs")
+        plt.tight_layout(.5)
+        plt.savefig(f"../results/{result_id}/umap_rdms.eps", format="eps")
+        plt.show()
 
     # # tSNE
     X_tsne = []
@@ -147,19 +157,20 @@ if __name__ == '__main__':
     plt.savefig(f"../results/{result_id}/tsne_dendrogram_hierarchical_clustering_rdms.svg", format="svg")
     plt.show()
 
-    # # PCA
-    # pca = PCA(n_components=2)
-    # X_pca = pca.fit_transform(X)
-    # plt.figure(figsize=(figsize, figsize))
-    # plt.scatter(X_pca[:, 0], X_pca[:, 1], c=colors)
-    # for xc, yc, t in zip(X_pca[:, 0], X_pca[:, 1], y_short):
-    #     plt.text(xc, yc, t)
-    # # plt.title("PCA of RDMs")
-    # # plt.xlabel("1st component")
-    # # plt.ylabel("2nd component")
-    # plt.tight_layout(.5)
-    # plt.savefig(f"../results/{result_id}/pca_rdms.eps", format="eps")
-    # plt.show()
+    # PCA
+    if args.pca:
+        pca = PCA(n_components=2)
+        X_pca = pca.fit_transform(X)
+        plt.figure(figsize=(figsize, figsize))
+        plt.scatter(X_pca[:, 0], X_pca[:, 1], c=colors)
+        for xc, yc, t in zip(X_pca[:, 0], X_pca[:, 1], y_short):
+            plt.text(xc, yc, t)
+        # plt.title("PCA of RDMs")
+        # plt.xlabel("1st component")
+        # plt.ylabel("2nd component")
+        plt.tight_layout(.5)
+        plt.savefig(f"../results/{result_id}/pca_rdms.eps", format="eps")
+        plt.show()
 
 
     figsize = 10

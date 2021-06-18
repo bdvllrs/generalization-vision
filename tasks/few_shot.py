@@ -106,7 +106,6 @@ if __name__ == '__main__':
                         help='Number of trials to execute.')
     parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size.')
-
     args = parser.parse_args()
 
     # Models to test

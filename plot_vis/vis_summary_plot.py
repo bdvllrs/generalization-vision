@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -35,11 +36,24 @@ dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNu
 few_shot_indices = [1, 5, 10]
 figsize = 3
 
-result_id_few_shot = 370
-result_id_clustering = 402
-result_id_transfer_learning = 372
+# result_id_few_shot = 370
+# result_id_clustering = 402
+# result_id_transfer_learning = 372
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Summary plot visualisations')
+    parser.add_argument('--load_results_few_shot', type=int,
+                        help='Id of a previous experiment to continue.')
+    parser.add_argument('--load_results_clustering', type=int,
+                        help='Id of a previous experiment to continue.')
+    parser.add_argument('--load_results_transfer_learning', type=int,
+                        help='Id of a previous experiment to continue.')
+    args = parser.parse_args()
+
+    result_id_few_shot = args.load_results_few_shot
+    result_id_clustering = args.load_results_clustering
+    result_id_transfer_learning = args.load_results_transfer_learning
+
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figsize, 0.8 * figsize))
     for k, model_name in enumerate(model_order):
         color, hatch = markers_bars[model_name]

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -28,9 +29,14 @@ dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNu
 few_shot_indices = [1, 5, 10]
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Unsupervised clustering visualisations')
+    parser.add_argument('--load_results', type=int,
+                        help='Id of a previous experiment to continue.')
+    args = parser.parse_args()
     # Dataset wise plot_vis
     # result_id = 299
-    result_id = 402
+    # result_id = 402
+    result_id = args.load_results
     idx_prototypes_bar_plot = 1
 
     config, results_data = load_results(Path(f"../results/{result_id}"))

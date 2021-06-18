@@ -1,9 +1,12 @@
+import argparse
 import gensim
+import os
 from gensim.models import KeyedVectors
 from gensim.models.word2vec import LineSentence
 from matplotlib import pyplot as plt
 
 from plot_vis.utils import model_names_short, markers_bars, plot_config
+from visiongeneralization.utils import load_conf
 
 model_order = list(reversed([
     "BiT-M-R50x1",
@@ -36,10 +39,16 @@ ntokens_train = 2227749224
 ntokens_val = 372710618
 
 if __name__ == '__main__':
-    loss_path = "../wordvectors/300d/losses_{model_name}.npy"
-    model_path = "../wordvectors/300d/{model_name}_epoch-4.model"
-    analogiy_path = "/home/romain/W2V_evaluation"
-    val_dataset = LineSentence("/mnt/SSD/datasets/enwiki/wiki.en.val.text")
+    conf = load_conf()
+    parser = argparse.ArgumentParser(description='Unsupervised clustering visualisations')
+    parser.add_argument('--word_vectors', default="../wordvectors", type=str,
+                        help='Path to word vectors.')
+    args = parser.parse_args()
+
+    loss_path = os.path.join(args.word_vectors, "300d/losses_{model_name}.npy")
+    model_path = os.path.join(args.word_vectors, "300d/{model_name}_epoch-4.model")
+    analogiy_path = conf.analogy_path
+    # val_dataset = LineSentence("/mnt/SSD/datasets/enwiki/wiki.en.val.text")
 
     # for model_name in model_names:
     #     cum_losses = np.load(loss_path.format(model_name=model_name))

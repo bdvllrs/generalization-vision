@@ -2,6 +2,8 @@ import os
 
 import gensim
 
+from .utils import load_conf
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 
 import numpy as np
@@ -285,9 +287,7 @@ def get_model(model_name, device, keep_fc=False):
         raise ValueError(f"{model_name} is not a valid model name.")
     return model, transform, tokenizer
 
-
 BiT_model_urls = {
-    # 'BiT-M-R50x1': os.path.expanduser("~/.cache/torch/checkpoints/BiT-M-R50x1.npz"),
     'BiT-M-R50x1': os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "checkpoints/BiT-M-R50x1.npz"),
 }
 clip_models = ["ViT-B/32", "RN50"]

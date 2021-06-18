@@ -21,6 +21,7 @@ datasets:
 visual_words: "../visual_words.txt"
 vocabulary: "../vocab.txt"
 visual_word_embeddings: "../visual_word_embeddings"
+analogy_path: /path/to/analogy
 
 models:
   visual: [
@@ -45,4 +46,3 @@ models:
       "GPT2",
       "BERT",
   ]
-

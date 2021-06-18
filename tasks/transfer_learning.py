@@ -145,7 +145,7 @@ if __name__ == '__main__':
                         default=[], choices=available_model_names(conf), help='Models to override.')
     parser.add_argument('--lr', default=1e-3, type=float,
                         help='Learning rate.')
-    parser.add_argument('--n_epochs', default=150, type=int,
+    parser.add_argument('--n_epochs', default=20, type=int,
                         help='Number of epochs.')
     parser.add_argument('--n_workers', default=0, type=int,
                         help='Number of workers.')

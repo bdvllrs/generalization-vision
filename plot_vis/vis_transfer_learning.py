@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -29,9 +30,14 @@ model_order = list(reversed([
 ]))
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Transfer learning visualisations')
+    parser.add_argument('--load_results', type=int,
+                        help='Id of a previous experiment to continue.')
+    args = parser.parse_args()
     # result_id = 212
     # result_id = 328
-    result_id = 372
+    # result_id = 372
+    result_id = args.load_results
     idx_prototypes_bar_plot = 1
 
     config, results_data = load_results(Path(f"../results/{result_id}"))

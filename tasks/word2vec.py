@@ -109,22 +109,14 @@ if __name__ == '__main__':
                         help='Model to do.')
     parser.add_argument('--batch_size', default=8, type=int,
                         help='Batch size.')
-    parser.add_argument('--device', default="cuda", type=str,
-                        help='Device to use.')
     parser.add_argument('--nepochs', default=5, type=int,
                         help='Number of epochs.')
-    parser.add_argument('--min_count', default=12, type=int,
-                        help='Min count.')
     parser.add_argument('--window_size', default=5, type=int,
                         help='Window size.')
-    parser.add_argument('--vocab_size', default=-1, type=int,
+    parser.add_argument('--vocab_size', default=20_000, type=int,
                         help='Size of vocabulary.')
-    parser.add_argument('--emb_dimension', default=-1, type=int,
+    parser.add_argument('--emb_dimension', default=300, type=int,
                         help='Size of the embedding.')
-    parser.add_argument('--data_location', type=str,
-                        help='location to the data information.')
-    parser.add_argument('--visual_word_embedding_path', type=str,
-                        help='location to the visual word embedding files.')
     parser.add_argument('--save_dir', default=".", type=str,
                         help='location to the save data.')
     parser.add_argument('--load_dir', default=None, type=str,
@@ -132,9 +124,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    device = torch.device(args.device)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_names = args.models
-    min_count = args.min_count
     window_size = args.window_size
     emb_dimension = args.emb_dimension
     vocab_size = args.vocab_size
@@ -158,7 +149,7 @@ if __name__ == '__main__':
             if emb_dimension == -1:
                 emb_dimension = list(visual_word_embeddings.vocabulary.values())[0].shape[0]
 
-            model = Word2Vec(min_count=5, window=5, vector_size=emb_dimension, workers=16, sg=1)
+            model = Word2Vec(window=window_size, vector_size=emb_dimension, workers=16, sg=1)
 
             model.build_vocab([[word] for word in vocabulary], trim_rule=vocab_trim_rule)
             model.build_vocab([[word] for word in visual_words], update=True, trim_rule=vocab_trim_rule)
