@@ -2,8 +2,6 @@ import os
 
 import gensim
 
-from .utils import load_conf
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 
 import numpy as np
@@ -217,6 +215,18 @@ def get_model(model_name, device, keep_fc=False):
         mode = model_name.split("-")[1]
         model = TSMModel(device, mode)
         transform = lambda x, y: get_imagenet_transform(x, y, False)
+    elif model_name == "GPV":
+        model = resnet50(pretrained=False)
+        checkpoint = torch.load(os.path.join(gpv_model_folder, "gpv.pth"), map_location=torch.device("cpu"))['model']
+        checkpoint = {mod_name.replace("detr.backbone.0.body.", ""): mod_param
+                      for mod_name, mod_param in checkpoint.items()
+                      if "module.detr.backbone.0.body" in mod_name}
+        model = ModelEncapsulation(model, 2048)
+        if not keep_fc:
+            model.module.fc = torch.nn.Identity()  # remove last linear layer before softmax function
+        model.load_state_dict(checkpoint)
+        model.to(device)
+        transform = get_imagenet_transform
     elif "madry" in model_name and model_name.replace("madry-", "") in madry_models:
         model = resnet50(pretrained=False)
         checkpoint = torch.load(os.path.join(madry_model_folder, model_name.replace("madry-", "") + ".pt"),
@@ -287,8 +297,10 @@ def get_model(model_name, device, keep_fc=False):
         raise ValueError(f"{model_name} is not a valid model name.")
     return model, transform, tokenizer
 
+
 BiT_model_urls = {
-    'BiT-M-R50x1': os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "checkpoints/BiT-M-R50x1.npz"),
+    'BiT-M-R50x1': os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")),
+                                "checkpoints/BiT-M-R50x1.npz"),
 }
 clip_models = ["ViT-B/32", "RN50"]
 geirhos_model_urls = {
@@ -300,6 +312,7 @@ geirhos_model_urls = {
 madry_model_folder = os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "checkpoints")
 vissl_model_folder = os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "checkpoints")
 madry_models = ["imagenet_l2_3_0", "imagenet_linf_4", "imagenet_linf_8"]
+gpv_model_folder = os.path.join(os.getenv("TORCH_HOME", os.path.expanduser("~/.cache/torch")), "checkpoints")
 
 imagenet_norm_mean, imagenet_norm_std = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 

@@ -41,6 +41,7 @@ models:
       "virtex",
       "TSM-v",
       "ICMLM",
+      "GPV"
   ]
   textual: [
       "GPT2",
