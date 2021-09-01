@@ -140,7 +140,8 @@ if __name__ == '__main__':
     parser.add_argument('--load_results', default=None, type=int,
                         help='Id of a previous experiment to continue.')
     parser.add_argument('--models', type=str, nargs="+",
-                        default=available_model_names(conf), choices=available_model_names(conf), help='Model to use.')
+                        default=available_model_names(conf, textual=False),
+                        choices=available_model_names(conf, textual=False), help='Model to use.')
     parser.add_argument('--override_models', type=str, nargs="+",
                         default=[], choices=available_model_names(conf), help='Models to override.')
     parser.add_argument('--lr', default=1e-3, type=float,
@@ -149,7 +150,7 @@ if __name__ == '__main__':
                         help='Number of epochs.')
     parser.add_argument('--n_workers', default=0, type=int,
                         help='Number of workers.')
-    parser.add_argument('--batch_size', default=80, type=int,
+    parser.add_argument('--batch_size', default=60, type=int,
                         help='Batch size.')
 
     args = parser.parse_args()

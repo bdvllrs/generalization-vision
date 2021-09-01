@@ -18,6 +18,8 @@ model_order = list(reversed([
     "madry-imagenet_linf_8",
     "CLIP-RN50",
     "virtex",
+    "GPV-SCE",
+    "GPV",
     "TSM-v",
     "ICMLM",
     # "TSM-vat",
@@ -36,7 +38,8 @@ if __name__ == '__main__':
     # Dataset wise plot_vis
     # result_id = 299
     # result_id = 402
-    result_id = args.load_results
+    result_id = 449
+    # result_id = args.load_results
     idx_prototypes_bar_plot = 1
 
     config, results_data = load_results(Path(f"../results/{result_id}"))

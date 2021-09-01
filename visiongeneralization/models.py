@@ -215,9 +215,10 @@ def get_model(model_name, device, keep_fc=False):
         mode = model_name.split("-")[1]
         model = TSMModel(device, mode)
         transform = lambda x, y: get_imagenet_transform(x, y, False)
-    elif model_name == "GPV":
+    elif "GPV" in model_name:
+        model_path = "gpv_sce.pth" if model_name == "GPV-SCE" else "gpv.pth"
         model = resnet50(pretrained=False)
-        checkpoint = torch.load(os.path.join(gpv_model_folder, "gpv.pth"), map_location=torch.device("cpu"))['model']
+        checkpoint = torch.load(os.path.join(gpv_model_folder, model_path), map_location=torch.device("cpu"))['model']
         checkpoint = {mod_name.replace("detr.backbone.0.body.", ""): mod_param
                       for mod_name, mod_param in checkpoint.items()
                       if "module.detr.backbone.0.body" in mod_name}

@@ -11,7 +11,7 @@ from visiongeneralization.utils import load_results
 
 dataset_order = ["CIFAR10", "CIFAR100", "CUB", "FashionMNIST", "MNIST", "HouseNumbers"]
 model_order = ["CLIP-RN50",
-               "virtex", "ICMLM", "TSM-v",
+               "virtex", "ICMLM", "TSM-v", "GPV-SCE", "GPV",
                # "TSM-vat",
                "BiT-M-R50x1", "RN50",
                "geirhos-resnet50_trained_on_SIN",
@@ -48,7 +48,8 @@ if __name__ == '__main__':
     # result_id = 229
     # result_id = 345
     # result_id = 370
-    result_id = args.load_results
+    result_id = 448
+    # result_id = args.load_results
     idx_prototypes_bar_plot = 1
 
     config, results_data = load_results(Path(f"../results/{result_id}"))

@@ -93,7 +93,7 @@ if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     conf = load_conf()
-    available_models = available_model_names(conf)
+    available_models = available_model_names(conf, textual=False)
 
     parser = argparse.ArgumentParser(description='Few-shot generalization task.')
     parser.add_argument('--load_results', default=None, type=int,
