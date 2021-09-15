@@ -43,13 +43,8 @@ if __name__ == '__main__':
                         help='Id of a previous experiment to continue.')
     args = parser.parse_args()
 
-    # result_id = 168
-    # result_id = 185
-    # result_id = 229
-    # result_id = 345
-    # result_id = 370
-    result_id = 448
-    # result_id = args.load_results
+    # result_id = 448
+    result_id = args.load_results
     idx_prototypes_bar_plot = 1
 
     config, results_data = load_results(Path(f"../results/{result_id}"))

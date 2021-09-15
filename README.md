@@ -11,6 +11,8 @@ cd generalization-vision
 pip install --user -e .
 ```
 
+The code has been tested with python 3.8.5.
+
 ### Pretrained models
 All pretrained models should be placed in `$TORCH_HOME/checkpoints`.
 
@@ -38,7 +40,21 @@ https://storage.googleapis.com/bit_models/BiT-M-R50x1.npz
 The config file is located in `config/main.yaml`. 
 Update the path of the datasets.
 
-## Tasks
+
+## Reproduce our results
+The folder `scripts` contains the scripts we used to generate the results in the paper.
+
+Running the script will only generate the data. To produce the plots, use the script `vis_{script_name}.py --load_result {checkpoint_id}`
+where the `checkpoint_id` is the id of the experiment (in the `results` folder).
+
+For the summary plot (figure 5 in the paper), use:
+```
+python vis_summary_plot.py --load_results_few_shot {ID_FEW_SHOT} --load_results_clustering {ID_CLUSTERING} --load_results_transfer_learning {ID_TRANSFER_LEARNING}
+```
+
+**NB. If you run the word2vec script with an enwiki dataset and want to try with another one, delete the file `tasks/ntokens.json` before re-running.**
+
+## API
 Start the different generalization tasks from the `tasks` folder.
 The tasks will create folders in the `results` folder with the id of the experiment.
 It will contain the results and checkpoints.

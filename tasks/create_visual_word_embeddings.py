@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -114,6 +115,9 @@ if __name__ == '__main__':
     model_names = args.models
 
     visual_word_embeddings = None
+    visual_word_embeddings_path = Path(conf.visual_word_embeddings)
+
+    visual_word_embeddings_path.mkdir(exist_ok=True)
 
     for model_name in model_names:
         if model_name != "none":
@@ -122,7 +126,7 @@ if __name__ == '__main__':
             if model_name in ['GPT2', 'BERT']:
                 visual_word_embeddings = TextFrozenEmbeddings(conf, model, tokenizer, device, -1)
             else:
-                visual_word_embeddings = FrozenEmbeddings(model, transform, conf.datasets.ImageNet,
-                                                          -1, device)
+                visual_word_embeddings = FrozenEmbeddings(
+                    model, transform, conf.datasets.ImageNet, -1, device)
 
-        np.save(os.path.join(conf.visual_word_embeddings, f"{model_name}.npy"), visual_word_embeddings.vocabulary)
+        np.save(str(visual_word_embeddings_path / f"{model_name}.npy"), visual_word_embeddings.vocabulary)

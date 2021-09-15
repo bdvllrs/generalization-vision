@@ -1,10 +1,13 @@
 import argparse
 import logging
 import os
+from pathlib import Path
 
 import gensim.models
+import json
 import numpy as np
 import torch
+import warnings
 from gensim.models import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec, PerplexityMetric
 from sklearn.decomposition import PCA
@@ -15,6 +18,14 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 
 def split_train_val_dataset(conf):
+    ntokens_path = Path("ntokens.json")
+    if ntokens_path.exists():
+        warnings.warn("Found an existing ntokens.json file. Using this for this run. "
+                      "Disregard if you are using the same text dataset as previous run. "
+                      "Otherwise delete the ntokens.json file and rerun this script.")
+        with open(ntokens_path, "r") as ntokens_file:
+            ntokens = json.load(ntokens_file)
+        return ntokens[0], ntokens[1]
     ntokens_train, ntokens_val = 0, 0
     with open(conf.datasets.enwiki.full, "r", encoding="utf8") as wiki_file:
         sentence_count = len(wiki_file.read().split("\n"))
@@ -29,8 +40,8 @@ def split_train_val_dataset(conf):
                 line = wiki_file.readline()
                 ntokens_val += len(line.split(" "))
                 val_file.write(line)
-    print("ntokens_train", ntokens_train)
-    print("ntokens_val", ntokens_val)
+    with open(ntokens_path, "w") as ntokens_file:
+        json.dump([ntokens_train, ntokens_val], ntokens_file)
     return ntokens_train, ntokens_val
 
 
@@ -117,7 +128,7 @@ if __name__ == '__main__':
                         help='Size of vocabulary.')
     parser.add_argument('--emb_dimension', default=300, type=int,
                         help='Size of the embedding.')
-    parser.add_argument('--save_dir', default=".", type=str,
+    parser.add_argument('--save_dir', default="wordvectors/", type=str,
                         help='location to the save data.')
     parser.add_argument('--load_dir', default=None, type=str,
                         help='path to checkpoints to load.')
@@ -130,19 +141,21 @@ if __name__ == '__main__':
     emb_dimension = args.emb_dimension
     vocab_size = args.vocab_size
 
-    ntokens_train = 2227749224
-    ntokens_val = 372710618
+    ntokens_train, ntokens_val = split_train_val_dataset(conf)
+    print("ntokens_train", ntokens_train)
+    print("ntokens_val", ntokens_val)
 
     visual_word_embeddings = None
+    visual_word_embeddings_path = Path(conf.visual_word_embeddings)
 
     for model_name in model_names:
         if model_name != "none":
             print(f"Computing model {model_name}.")
+            visual_word_embedding_path = visual_word_embeddings_path / f"{model_name}.npy"
             visual_word_embeddings = VisualWordEmbeddings(args.visual_word_embedding_path,
                                                           model_name, device, emb_dimension)
 
         if args.load_dir is None:
-            # ntokens_train, ntokens_val = split_train_val_dataset(conf)
             visual_words = load_vocab(conf.visual_words)
             vocabulary = load_vocab(conf.vocabulary, vocab_size)
 

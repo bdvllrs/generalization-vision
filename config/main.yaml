@@ -21,7 +21,8 @@ datasets:
 visual_words: "../visual_words.txt"
 vocabulary: "../vocab.txt"
 visual_word_embeddings: "../visual_word_embeddings"
-analogy_path: /path/to/analogy
+analogy_morphology: /path/to/analogy
+analogy_semantic: /path/to/analogy
 
 models:
   visual: [
@@ -33,8 +34,6 @@ models:
       "madry-imagenet_l2_3_0",
       "madry-imagenet_linf_8",
       "madry-imagenet_linf_4",
-    #    "semi-supervised-YFCC100M",
-    #    "semi-weakly-supervised-instagram",
   ]
   multimodal: [
       "CLIP-RN50",

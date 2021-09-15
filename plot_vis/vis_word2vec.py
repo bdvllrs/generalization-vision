@@ -29,18 +29,6 @@ model_order = list(reversed([
     # "semi-supervised-YFCC100M", "semi-weakly-supervised-instagram"
 ]))
 
-val_loss = {
-    "none": 0.19160065893266287,
-    "RN50": 0.19087196490871103,
-    "CLIP-RN50": 0.1911929216891803,
-    "BERT": 0.1926843093050813,
-    "virtex": 0.18982931149012772,
-    "GPT2": 0.19209159208874485
-}
-
-ntokens_train = 2227749224
-ntokens_val = 372710618
-
 def get_per_sample_acc(confusion_matrix):
     acc = []
     for i in range(confusion_matrix.shape[0]):
@@ -57,11 +45,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Unsupervised clustering visualisations')
     parser.add_argument('--word_vectors', default="../wordvectors", type=str,
                         help='Path to word vectors.')
+    parser.add_argument('--emb_dimension', default=300, type=int,
+                        help='Dimension of the word vectors.')
     args = parser.parse_args()
 
-    loss_path = os.path.join(args.word_vectors, "300d/losses_{model_name}.npy")
-    model_path = os.path.join(args.word_vectors, "300d/{model_name}_epoch-4.model")
-    analogiy_path = conf.analogy_path
+    loss_path = os.path.join(args.word_vectors, "losses_{model_name}.npy")
+    model_path = os.path.join(args.word_vectors, "{model_name}_epoch-4.model")
+    analogiy_semantic_path = conf.analogy_path_semantic
+    analogiy_morphology_path = conf.analogy_path_morphology
+    word_pair_path = conf.word_pairs
     # val_dataset = LineSentence("/mnt/SSD/datasets/enwiki/wiki.en.val.text")
 
     # for model_name in model_names:
@@ -76,7 +68,7 @@ if __name__ == '__main__':
     #     print(model_name)
     #     print(cum_losses)
     #     print(losses / ntokens_train)
-    sanity_check_accuracies = np.load("../results/cls_perf_sanity_checks_emb_dim_300.npy", allow_pickle=True).item()
+    sanity_check_accuracies = np.load(f"../results/cls_perf_sanity_checks_emb_dim_{args.emb_dimension}.npy", allow_pickle=True).item()
 
     analogies = {}
     analogies_morphology = {}
@@ -89,9 +81,9 @@ if __name__ == '__main__':
     for model_name in model_order:
         model = gensim.models.Word2Vec.load(model_path.format(model_name=model_name))
 
-        analogies[model_name] = model.wv.evaluate_word_analogies(f'{analogiy_path}/question-words-without-morphology.txt')
-        analogies_morphology[model_name] = model.wv.evaluate_word_analogies(f'{analogiy_path}/question-words-only-morphology.txt')
-        word_pairs[model_name] = model.wv.evaluate_word_pairs(f'{analogiy_path}/wordsim353.tsv')
+        analogies[model_name] = model.wv.evaluate_word_analogies(analogiy_semantic_path)
+        analogies_morphology[model_name] = model.wv.evaluate_word_analogies(analogiy_morphology_path)
+        word_pairs[model_name] = model.wv.evaluate_word_pairs(word_pair_path)
 
         if model_name in sanity_check_accuracies['accuracies']:
             acc_per_sample = get_per_sample_acc(sanity_check_accuracies['confusion'][model_name])

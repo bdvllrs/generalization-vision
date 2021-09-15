@@ -54,8 +54,6 @@ if __name__ == '__main__':
                         help='Model to do.')
     parser.add_argument('--batch_size', default=8, type=int,
                         help='Batch size.')
-    parser.add_argument('--nepochs', default=5, type=int,
-                        help='Number of epochs.')
     parser.add_argument('--emb_dimension', default=300, type=int,
                         help='Size of the embedding.')
 
@@ -64,10 +62,6 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_names = args.models
     emb_dimension = args.emb_dimension
-    lr = 1e-4
-    batch_size = 64
-    n_epochs = 3
-    n_workers = 32
 
 
     visual_word_embeddings = None
@@ -104,9 +98,8 @@ if __name__ == '__main__':
             confusion_matrices[model_name] = confusion_matrix
             print(f"{model_name}, acc: {accuracy}")
 
-    np.save(f"../results/cls_perf_sanity_checks_emb_dim_{emb_dimension}_v2.npy", {
+    np.save(f"../results/cls_perf_sanity_checks_emb_dim_{emb_dimension}.npy", {
         "accuracies": accuracies,
-        # "losses": losses,
         "confusion": confusion_matrices,
         "cls_to_idx": cls_to_idx,
         "emb_dimension": emb_dimension

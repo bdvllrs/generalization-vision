@@ -52,13 +52,13 @@ if __name__ == '__main__':
                         help='Id of a previous experiment to continue.')
     args = parser.parse_args()
 
-    # result_id_few_shot = args.load_results_few_shot
-    # result_id_clustering = args.load_results_clustering
-    # result_id_transfer_learning = args.load_results_transfer_learning
+    result_id_few_shot = args.load_results_few_shot
+    result_id_clustering = args.load_results_clustering
+    result_id_transfer_learning = args.load_results_transfer_learning
 
-    result_id_few_shot = 448
-    result_id_clustering = 449
-    result_id_transfer_learning = 451
+    # result_id_few_shot = 448
+    # result_id_clustering = 449
+    # result_id_transfer_learning = 451
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(figsize, 0.8 * figsize))
     for k, model_name in enumerate(model_order):
