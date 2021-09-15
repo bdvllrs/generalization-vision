@@ -65,7 +65,8 @@ def averaged_text_features(model_, texts):
     return text_features
 
 
-def evaluate_dataset(model_, dataset, text_inputs, labels, device, batch_size=64, encode_text=True):
+def evaluate_dataset(model_, dataset, text_inputs, labels, device, batch_size=64, encode_text=True,
+                     transform_image_features=None):
     dataloader = torch.utils.data.DataLoader(dataset, batch_size)
     dataloader_iter = iter(dataloader)
     predictions = []
@@ -83,6 +84,8 @@ def evaluate_dataset(model_, dataset, text_inputs, labels, device, batch_size=64
             text_features = text_inputs
         for image_input, target in tqdm(dataloader_iter, total=len(dataloader_iter)):
             image_features = model_.encode_image(image_input.to(device))
+            if transform_image_features is not None:
+                image_features = transform_image_features(image_features)
 
             image_features /= image_features.norm(dim=-1, keepdim=True)
 
@@ -374,6 +377,7 @@ def available_model_names(conf, visual=True, multimodal=True, textual=True):
         models.extend(conf.models.textual)
     return models
 
+
 # def load_vocabulary(path, vocab_size):
 #     vocab = []
 #     with open(path, newline='\n') as vocab_file:
@@ -383,3 +387,41 @@ def available_model_names(conf, visual=True, multimodal=True, textual=True):
 #                 vocab.append((row[0], int(row[1])))
 #     vocab = sorted(vocab, key=lambda x: x[1], reverse=True)
 #     return list(map(lambda x: x[0], vocab[:vocab_size]))
+
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m = np.mean(a)
+    std = np.std(a)
+    h = std * scipy.stats.t.ppf((1 + confidence) / 2., n - 1)
+    return m, std, h
+
+
+def get_bootstrap_estimates(data, number_of_samples_to_draw, num_bootstraps=1000, operation='mean'):
+    import scipy
+    from scipy import stats
+    def mean_confidence_interval(data, confidence=0.99):
+
+        a = 1.0 * np.array(data)
+        n = len(a)
+        m = np.mean(a)
+        std = np.std(a)
+        # se = scipy.stats.sem(a)
+        h = std * scipy.stats.t.ppf((1 + confidence) / 2., n - 1)
+        # return  m, m-h,m+h,h
+        return m, std, h
+
+    samples = []
+    for _ in range(num_bootstraps):
+        x = np.random.choice(data, size=number_of_samples_to_draw, replace=True)
+        if operation == 'mean':
+            samples.append(np.mean(x))
+        elif operation == 'median':
+            samples.append(np.median(x))
+
+    mean, std, conf_interval = mean_confidence_interval(samples, confidence=0.99)
+    # x,y,z,h = mean_confidence_interval(mean_dict[i],confidence=0.95)
+    # datapoint.append(x)
+    # err_points.append(h)
+
+    return mean, std, conf_interval

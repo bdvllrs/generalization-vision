@@ -3,8 +3,8 @@
 ## Setup
 Download and install the project:
 ```
-git clone https://github.com/bdvllrs/FewShotComparison.git
-cd FewShotComparison
+git clone https://github.com/bdvllrs/generalization-vision.git
+cd generalization-vision
 pip install --user -e .
 ```
 
