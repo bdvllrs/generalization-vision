@@ -124,3 +124,6 @@ python word2vec.py
 - `--load_dir` path to load the word embeddings from in the case of evaluating the word embeddings.
 - `--load_results` (`int`) id of a previous experiment to load and continue.
 - `--override_models` (`list[str]`) if a previous experiment is loaded, list of models that had already been computed to recompute. Defaults to none. 
+
+#### Word Analogies & Word similarities Datasets
+The dataset to evaluate the Skip-Gram models are available in the gensim repository at https://github.com/RaRe-Technologies/gensim/blob/develop/gensim/test/test_data/wordsim353.tsv for word similarities and https://github.com/RaRe-Technologies/gensim/blob/develop/gensim/test/test_data/questions-words.txt for word analogies
