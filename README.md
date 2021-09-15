@@ -54,6 +54,10 @@ python vis_summary_plot.py --load_results_few_shot {ID_FEW_SHOT} --load_results_
 
 **NB. If you run the word2vec script with an enwiki dataset and want to try with another one, delete the file `tasks/ntokens.json` before re-running.**
 
+## Pretrained models
+The word2vec models (gensim models) trained using the method detailed in the paper are available in this repository: 
+[https://github.com/bdvllrs/generalization-vision-pretrained](https://github.com/bdvllrs/generalization-vision-pretrained).
+
 ## API
 Start the different generalization tasks from the `tasks` folder.
 The tasks will create folders in the `results` folder with the id of the experiment.
