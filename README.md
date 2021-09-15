@@ -1,4 +1,7 @@
-# Generalization Analysis
+# Does Language Help Generalization in Vision Models?
+Code and configurations related to the paper:
+
+Devillers, B., Choksi, B., Bielawski, R., & VanRullen, R. (2021). Does language help generalization in vision models? CoNLL 2021: Computational Natural Language Learning. [arXiv:2104.08313](https://arxiv.org/abs/2104.08313).
 
 ## Setup
 Download and install the project:
