@@ -1,5 +1,5 @@
-# torch==1.7.1
-#torchvision==0.8.2
+torch==1.7.1
+torchvision==0.8.2
 matplotlib==3.3.2
 scikit-learn==0.23.2
 numpy==1.19.2
@@ -10,9 +10,9 @@ scipy==1.5.2
 transformers==4.2.2
 umap-learn==0.5.1
 natsort==7.1.1
-gensim>=4.0.0
-nltk
-tensorflow
+gensim==4.0.1
+nltk==3.5
+tensorflow==2.3.0
 tensorflow-hub
-ftfy
-omegaconf
+ftfy==5.8
+omegaconf==2.0.6
