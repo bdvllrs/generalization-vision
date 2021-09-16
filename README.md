@@ -36,6 +36,9 @@ Download the BiT models here:
 https://storage.googleapis.com/bit_models/BiT-M-R50x1.npz
 ```
 
+### Word Analogies & Word Similarities Datasets
+The dataset to evaluate the Skip-Gram models are available in the gensim repository at https://github.com/RaRe-Technologies/gensim/blob/develop/gensim/test/test_data/wordsim353.tsv for word similarities and https://github.com/RaRe-Technologies/gensim/blob/develop/gensim/test/test_data/questions-words.txt for word analogies
+
 ### Configuration
 The config file is located in `config/main.yaml`. 
 Update the path of the datasets.
@@ -125,5 +128,3 @@ python word2vec.py
 - `--load_results` (`int`) id of a previous experiment to load and continue.
 - `--override_models` (`list[str]`) if a previous experiment is loaded, list of models that had already been computed to recompute. Defaults to none. 
 
-#### Word Analogies & Word Similarities Datasets
-The dataset to evaluate the Skip-Gram models are available in the gensim repository at https://github.com/RaRe-Technologies/gensim/blob/develop/gensim/test/test_data/wordsim353.tsv for word similarities and https://github.com/RaRe-Technologies/gensim/blob/develop/gensim/test/test_data/questions-words.txt for word analogies
