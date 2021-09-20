@@ -114,7 +114,7 @@ if model_to_fetch == 'clip':
     model = torch.nn.Sequential(cnn,
                                 torch.nn.Linear(1024,1000))
 
-    clip_weights_path = '/mnt/HD2/bhavin/training_CLIP/training_clip_head2_lr0.0001/ckpt_ep100_lr0.0001.net'
+    clip_weights_path = '/path/to/trained/clip/head'
     ckpt = torch.load(clip_weights_path)
     model.load_state_dict(ckpt)
     model.to(device)
@@ -124,7 +124,7 @@ elif model_to_fetch == 'virtex':
     model = get_model('virtex') 
     model.fc = torch.nn.Linear(2048, 1000)
 
-    pathtoweights = "/mnt/HD2/bhavin/madry_models/training_virtex_clf/ckpt_ep150_lr0.0003.net"
+    pathtoweights = '/path/to/trained/virtex/head'
     model.load_state_dict(torch.load(pathtoweights))
 
     model.to(device)
