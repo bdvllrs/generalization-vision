@@ -52,8 +52,9 @@ is_attack_targeted = True #str(sys.argv[3])
 
 print (f"Running {'targeted' if is_attack_targeted else 'untargeted'} attacks...")
 save_file = f"{model_to_fetch}_fb3_rseed{random_seed}_madrysetup_{'targeted' if is_attack_targeted else 'untargeted'}Linf_100RPGDsteps.p"
+
 ###################################################################################################
-###                              def main()
+###                              setup dataloaders and get models
 ###################################################################################################
 
 
@@ -157,6 +158,9 @@ def get_dist(A,B):
     return (A - B).norm(dim=1)
 
 #%%
+###################################################################################################
+###                                  attack!
+###################################################################################################
 fmodel = fb.PyTorchModel(model,bounds=(0,1),preprocessing=preprocessing)
 
 perturbations = []  # perturbations[batch][epsilon][img_in_a_batch]
