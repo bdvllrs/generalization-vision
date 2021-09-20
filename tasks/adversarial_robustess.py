@@ -180,10 +180,9 @@ for ind,(images,labels) in enumerate(tqdm(val_loader)):
     raw_advs,clipped_advs,success = attack(fmodel,images.cuda(),criterion=criterion,epsilons=epsilons)
 
 
-    clipped_images.append(clipped_advs)
-    # perturbs_for_this_batch = [(clipped_advs[eps].cuda() - images.cuda()).norm(dim=(1,2,3)) for eps in range(len(epsilons))]  # TODO: Change this if you are planning to change the attack
-    perturbs_for_this_batch = [get_dist(clipped_advs[eps].cuda(),images.cuda()) for eps in range(len(epsilons))]  # TODO: Change this if you are planning to change the attack
-    perturbations.append(perturbs_for_this_batch)
+    # clipped_images.append(clipped_advs)
+    # perturbs_for_this_batch = [get_dist(clipped_advs[eps].cuda(),images.cuda()) for eps in range(len(epsilons))]  # TODO: Change this if you are planning to change the attack
+    # perturbations.append(perturbs_for_this_batch)
     successes.append(success)
 
 
