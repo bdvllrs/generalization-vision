@@ -59,7 +59,7 @@ python vis_summary_plot.py --load_results_few_shot {ID_FEW_SHOT} --load_results_
 
 ## Pretrained models
 The word2vec models (gensim models) trained using the method detailed in the paper are available in this repository: 
-[https://github.com/bdvllrs/generalization-vision-pretrained](https://github.com/bdvllrs/generalization-vision-pretrained).
+[https://gitlab.aniti.fr/Benjamin.Devillers/generalization-vision-pretrained](https://gitlab.aniti.fr/Benjamin.Devillers/generalization-vision-pretrained).
 
 ## API
 Start the different generalization tasks from the `tasks` folder.
